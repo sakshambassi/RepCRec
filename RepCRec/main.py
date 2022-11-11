@@ -1,28 +1,18 @@
-import configparser
 import os
 
+from read_config import read_config
 from TransactionManager import transactionmanager
 
 
-def read_config():
-    """
-
-    Returns:
-        config: object of ConfigParser with config values
-
-    """
-    config = configparser.ConfigParser()
+def main():
     path = os.path.dirname(os.path.realpath(__file__))
     configdir = '/'.join([path, 'config.ini'])
-    config.read(configdir)
-    return config
 
-
-def main():
-    config = read_config()
+    config = read_config(configdir)
     transaction_manager = transactionmanager.TransactionManager(
-        total_sites=config['CONSTANTS']['sites'])
+        total_sites=config['CONSTANTS']['num_sites'])
 
+    # TODO: complete prepare_input and follow the order of events
     transaction_manager.prepare_input(None)
 
 
