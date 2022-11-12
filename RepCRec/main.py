@@ -13,7 +13,7 @@ def main():
         total_sites=config['CONSTANTS']['num_sites'])
 
     # TODO: complete prepare_input and follow the order of events
-    transaction_manager.prepare_input(None)
+    transaction_manager.prepare_input(filename='../tests/sample_input/test_01.txt')
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
-class Transaction():
+class Transaction:
     def __init__(self,
                  id_: int,
-                 instruction: int,
+                 transaction_type: int,
+                 instruction_type: int,
                  site_id: int,
                  variable: int,
                  value: float):
@@ -9,13 +10,15 @@ class Transaction():
 
         Args:
             id_ ():
-            instruction ():
+            transaction_type ():
+            instruction_type ():
             site_id ():
             variable ():
             value ():
         """
         self.id = id_
-        self.instruction = instruction
+        self.transaction_type = transaction_type
+        self.instruction_type = instruction_type
         self.site_id = site_id
         self.variable = variable
         self.value = value

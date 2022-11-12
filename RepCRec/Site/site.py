@@ -8,6 +8,7 @@ path = os.path.dirname(os.path.realpath(__file__))
 configdir = '/'.join([path, '..', 'config.ini'])
 config = read_config(configdir)
 
+
 class Site:
     def __init__(self, id_: int):
         self.id = id_
@@ -48,9 +49,8 @@ class Site:
         Returns:
             None
         """
-        for i in range(1, int(config['CONSTANTS']['num_variables'])+1):
+        for i in range(1, int(config['CONSTANTS']['num_variables']) + 1):
             self.data[i] = i * 10
-
 
     def dump(self):
         """
