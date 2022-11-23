@@ -9,25 +9,25 @@ class IOManager:
 
     @staticmethod
     def get_transaction_or_site_id(input_: str):
-        """
+        """ fetches the transaction or site id
 
         Args:
-            input_ ():
+            input_ (str): input string text
 
         Returns:
-
+            transaction_id or site_id (int)
         """
         begin, end = input_.find("("), input_.find(")")
         return int(input_[begin+2:end])
 
     def input_file(self, filename: str) -> list[transaction.Transaction]:
-        """
+        """ Reads the input file, processes it and creates list of transactions
 
         Args:
-            filename ():
+            filename (str): input filename path
 
         Returns:
-
+            transactions (list): list of transactions
         """
         transactions = []
         ro_transactions = []
@@ -62,7 +62,7 @@ class IOManager:
                             transaction_id, variable, value = self.process_write(line)
                         elif line[0] == 'R':
                             transaction_id, variable = self.process_read(line)
-                            # TODO: assign transaction
+                            transaction_type = enums.TransactionType.READONLY if transaction_id in ro_transactions else enums.TransactionType.READ
                         else:
                             raise Exception("Unknown transaction type")
 
@@ -77,13 +77,14 @@ class IOManager:
         return transactions
 
     def process_read(self, input_: str):
-        """
+        """ processes read transaction deets
 
         Args:
-            input_ ():
+            input_ (str): line of file
 
         Returns:
-
+            transaction_id (int): read transaction id
+            variable (int): variable data
         """
         begin, end = input_.find("("), input_.find(")")
         raw_details = input_[begin + 2:end].split(',')
@@ -92,13 +93,15 @@ class IOManager:
         return transaction_id, variable
 
     def process_write(self, input_: str):
-        """
+        """ processes write transaction deets
 
         Args:
-            input_ ():
+            input_ (str): line of file
 
         Returns:
-
+            transaction_id (int): write transaction id
+            variable (int): variable data
+            value (int):
         """
         begin, end = input_.find("("), input_.find(")")
         raw_details = input_[begin+2:end].split(',')
