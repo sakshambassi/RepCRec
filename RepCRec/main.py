@@ -1,7 +1,7 @@
 import os
 
 from read_config import read_config
-from TransactionManager import transactionmanager
+from src.transaction_manager import TransactionManager
 
 
 def main():
@@ -9,7 +9,7 @@ def main():
     configdir = '/'.join([path, 'config.ini'])
 
     config = read_config(configdir)
-    transaction_manager = transactionmanager.TransactionManager(
+    transaction_manager = TransactionManager(
         total_sites=config['CONSTANTS']['num_sites'])
 
     # TODO: complete prepare_input and follow the order of events

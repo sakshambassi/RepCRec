@@ -1,16 +1,16 @@
-from DeadlockManager import deadlockmanager
-from IOManager import iomanager
-from Site import site
+from src.deadlock_manager import DeadlockManager
+from src.io_manager import IOManager
+from src.site import Site
 
 
 class TransactionManager:
     def __init__(self, total_sites: int):
-        self.DeadlockManager = deadlockmanager.DeadlockManager()
-        self.IOManager = iomanager.IOManager()
+        self.DeadlockManager = DeadlockManager()
+        self.IOManager = IOManager()
         self.sites = []
         self.timestamp = 0
         self.total_sites = int(total_sites)
-        self.transactions = []      # store details about transactions
+        self.transactions = []  # store details about transactions
 
     def detect_deadlock(self):
         """
@@ -47,15 +47,13 @@ class TransactionManager:
             None
         """
         for id_ in range(self.total_sites):
-            self.sites.append(site.Site(id_=id_ + 1))
+            self.sites.append(Site(id_=id_ + 1))
             self.sites[id_].initialize()
 
         self.transactions = self.IOManager.input_file(filename)
 
         # TODO: execute()
         self.start_execution()
-
-
 
     def start_execution(self):
         """ starts the execution on all transactions
@@ -68,4 +66,3 @@ class TransactionManager:
             while True:
                 if not self.detect_deadlock():
                     break
-
