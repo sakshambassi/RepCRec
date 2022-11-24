@@ -1,10 +1,5 @@
-import os
+from src.utils import config
 
-from read_config import read_config
-
-path = os.path.dirname(os.path.realpath(__file__))
-configdir = '/'.join([path, '..', 'config.ini'])
-config = read_config(configdir)
 
 class DeadlockManager:
     def __init__(self) -> None:
@@ -35,17 +30,20 @@ class DeadlockManager:
             cycle or not (bool)
         """
         if not visited[node]:
-            recursion_stack[node] = visited[node] = True    # setting visited true for current node
+            recursion_stack[node] = visited[
+                node
+            ] = True  # setting visited true for current node
             for i in range(len(self.adjacency_list[node])):
-                if (not visited[i] \
-                    and self.detect_cycle_in_graph(visited, recursion_stack, i)) \
-                    or (recursion_stack[i]):
+                if (
+                    not visited[i]
+                    and self.detect_cycle_in_graph(visited, recursion_stack, i)
+                ) or (recursion_stack[i]):
                     self.deadlocked_transactions.add(i)
                     return True
-        
-        recursion_stack[node] = False                       # resetting
+
+        recursion_stack[node] = False  # resetting
         return False
-    
+
     def detect_deadlock_in_graph(self):
         """ detects deadlock in graph
 
@@ -56,9 +54,8 @@ class DeadlockManager:
         recursion_sack = visited = [False] * self.nodes
         for i in range(self.nodes):
             if self.detect_cycle_in_graph(
-                visited=visited,
-                recursion_stack=recursion_sack,
-                node=i):
+                visited=visited, recursion_stack=recursion_sack, node=i
+            ):
                 return self.deadlocked_transactions
         return self.deadlocked_transactions
 

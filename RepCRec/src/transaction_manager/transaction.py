@@ -1,11 +1,13 @@
 class Transaction:
-    def __init__(self,
-                 id_: int,
-                 transaction_type: int,
-                 instruction_type: int,
-                 site_id: int,
-                 variable: int,
-                 value: float):
+    def __init__(
+        self,
+        id_: int,
+        transaction_type: int,
+        instruction_type: int,
+        site_id: int,
+        variable: int,
+        value: float,
+    ):
         """
 
         Args:
