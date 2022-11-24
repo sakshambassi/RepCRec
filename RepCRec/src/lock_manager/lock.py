@@ -1,5 +1,6 @@
-from enums import LockType
 from typing import Set
+
+from src.enums import LockType
 
 
 class Lock:

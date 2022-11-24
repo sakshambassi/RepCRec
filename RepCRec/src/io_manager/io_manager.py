@@ -1,7 +1,8 @@
 import re
-from src.enums import TransactionType, InstructionType
-from src.transaction import Transaction
 from typing import List
+
+from src.enums import InstructionType, TransactionType
+from src.transaction_manager import Transaction
 
 
 class IOManager:

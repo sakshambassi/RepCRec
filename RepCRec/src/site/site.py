@@ -1,16 +1,11 @@
-import os
-
-from src.enums import LockType
-from src.lock_manager import LockManager
-from read_config import read_config
 import math
 from typing import Dict, Set
 
-path = os.path.dirname(os.path.realpath(__file__))
-configdir = '/'.join([path, '..', 'config.ini'])
-config = read_config(configdir)
+from src.enums import LockType
+from src.lock_manager import LockManager
+from src.utils import config
 
-COUNT_VARIABLES = int(config['CONSTANTS']['num_variables'])
+COUNT_VARIABLES = int(config["CONSTANTS"]["num_variables"])
 
 
 class Site:
@@ -52,7 +47,6 @@ class Site:
         """
         pass
 
-
     def initialize(self):
         """ Initializes the site object with data
 
@@ -64,7 +58,6 @@ class Site:
                 self.stale[i] = False
             self.data[i] = {0: i * 10}
 
-
     def _floor_of_tick(self, data_per_variable: Dict[int, int], tick: int) -> int:
         closeness = math.inf
         closest_tick = None
@@ -73,7 +66,6 @@ class Site:
                 closeness = tick - current_tick
                 closest_tick = current_tick
         return closest_tick
-
 
     def get_value(self, variable: int, tick: int) -> int:
         """
@@ -86,16 +78,13 @@ class Site:
         closest_tick = self._floor_of_tick(data_so_far, tick)
         return data_so_far[closest_tick]
 
-
     def set_value(self, variable: int, tick: int, value: int):
 
         self.data[variable][tick] = value
         self.stale[variable] = False
 
-
     def commit_cache(self, variable: int):
         pass
-
 
     def get_last_committed_time(self, variable: int, tick: int) -> int:
         """
@@ -106,7 +95,6 @@ class Site:
         data_so_far = self.data[variable]
         return self._floor_of_tick(data_so_far, tick)
 
-
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
 
@@ -114,7 +102,6 @@ class Site:
 
         """
         return self.lock_manager.get_all_transaction_locks(variable)
-
 
     def dump(self):
         """
@@ -134,7 +121,6 @@ class Site:
         """
         return self.active
 
-
     def release_all_locks(self):
         """
 
@@ -142,7 +128,6 @@ class Site:
 
         """
         self.lock_manager.release_all_locks()
-
 
     def release_lock(self, variable: int) -> bool:
         """
@@ -155,7 +140,6 @@ class Site:
         """
         pass
 
-
     def shutdown(self):
         """
 
@@ -164,7 +148,6 @@ class Site:
         """
         pass
 
-
     def fail(self):
         """
 
@@ -172,11 +155,10 @@ class Site:
 
         """
         self.active = False
-        for i in range(1, COUNT_VARIABLES+1):
+        for i in range(1, COUNT_VARIABLES + 1):
             if i % 2 == 0:
                 self.stale[i] = True
         self.cache = dict()
-
 
     def is_stale(self, variable: int) -> bool:
         """
@@ -185,7 +167,6 @@ class Site:
 
         """
         return self.stale.get(variable)
-
 
     def set_cache(self, variable: int, value: int, tick: int):
         """
@@ -197,7 +178,6 @@ class Site:
         cache_so_far[tick] = value
         self.cache[variable] = cache_so_far
 
-
     def is_variable_unique(self, variable: int):
         """
 
@@ -205,7 +185,6 @@ class Site:
 
         """
         return variable in self.data and variable % 2 != 0
-
 
     def is_variable_present(self, variable: int):
         """

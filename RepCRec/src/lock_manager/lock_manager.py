@@ -1,6 +1,8 @@
-from src.enums import LockType, AcquireLockPermission
-from src.lock import Lock
 from typing import Set
+
+from src.enums import AcquireLockPermission, LockType
+from src.lock_manager import Lock
+
 
 class LockManager:
     def __init__(self):
@@ -22,7 +24,9 @@ class LockManager:
         """
         pass
 
-    def can_acquire_write_lock(self, variable: int, transaction: int) -> AcquireLockPermission:
+    def can_acquire_write_lock(
+        self, variable: int, transaction: int
+    ) -> AcquireLockPermission:
 
         if variable not in self.table or len(self.table[variable].transactions) == 0:
             return AcquireLockPermission.ALLOWED
@@ -41,8 +45,9 @@ class LockManager:
 
         return AcquireLockPermission.NOT_ALLOWED
 
-
-    def can_acquire_read_lock(self, variable: int, transaction: int) -> AcquireLockPermission:
+    def can_acquire_read_lock(
+        self, variable: int, transaction: int
+    ) -> AcquireLockPermission:
 
         if variable not in self.table or len(self.table[variable].transactions) == 0:
             return AcquireLockPermission.ALLOWED
@@ -57,13 +62,11 @@ class LockManager:
 
         return AcquireLockPermission.NOT_ALLOWED
 
-
     def acquire_lock(self, transaction: int, variable: int, type: LockType):
 
         lock = self.table.get(variable, Lock())
         lock.transactions.add(transaction)
         self.table[variable] = lock
-
 
     def get_lock_type(self, variable: int) -> LockType:
         """
@@ -76,7 +79,6 @@ class LockManager:
         """
         pass
 
-
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
 
@@ -86,7 +88,6 @@ class LockManager:
         if variable in self.table:
             return self.table.get(variable).transactions
         return set()
-
 
     def release_all_locks(self):
         """
