@@ -7,10 +7,12 @@ class TransactionManager:
     def __init__(self, total_sites: int):
         self.DeadlockManager = deadlockmanager.DeadlockManager()
         self.IOManager = iomanager.IOManager()
+        self.last_failed_timestamp = {}
         self.sites = []
         self.timestamp = 0
         self.total_sites = int(total_sites)
         self.transactions = []      # store details about transactions
+        self.transaction_start_timestamp = {}
 
     def detect_deadlock(self):
         """
@@ -19,6 +21,13 @@ class TransactionManager:
 
         """
         # TODO: call self.DeadlockManager.detect_deadlock_in_graph()
+        deadlocks = self.DeadlockManager.detect_deadlock_in_graph()
+        if len(deadlocks):
+            latest_transaction_id = self.fetch_latest_transaction(transactions=deadlocks)
+            self.DeadlockManager.delete_edges_of_source(latest_transaction_id)
+            # TODO: pick up from here
+            print(f'There exists deadlcock with number of transactions={len(deadlocks)}')
+
         return False
 
     def dump_all_sites(self):
@@ -29,13 +38,24 @@ class TransactionManager:
         """
         pass
 
-    def fetch_latest_transaction(self):
-        """
+    def fetch_latest_transaction(self, transactions: set) -> int:
+        """ fetches latest/youngest transaction
+
+        Args:
+            transactions (set): set of transaction ids to search from
 
         Returns:
+            latest_transaction_id (int): youngest transaction id
 
         """
-        pass
+        latest_transaction_id = None
+        max_time = float('-inf')
+        for transaction_id, timestamp in self.transaction_start_timestamp.items():
+            if transaction_id in transactions and timestamp > max_time:
+                latest_transaction_id = transaction_id; max_time = timestamp
+        return latest_transaction_id
+
+
 
     def prepare_input(self, filename: str):
         """ creates sites and pushes it to self.sites
