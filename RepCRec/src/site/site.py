@@ -13,9 +13,9 @@ class Site:
         self.id = id_
         self.active = True
         self.lock_manager = LockManager()
-        self.data = dict()
+        self.data = dict()                      # {variable: {time: value}}
         self.stale = dict()
-        self.cache = dict()
+        self.cache = dict()                     # {variable: {time: value}}
 
     def acquire_lock(self, transaction: int, variable: int, locktype: LockType) -> bool:
         """
@@ -80,17 +80,28 @@ class Site:
 
         """
         data_so_far = self.data[variable]
-        # find a key in `data_so_far` that is less than equal to tick
-        closest_tick = self._floor_of_timestamp(data_so_far, timestamp)
-        return data_so_far[closest_tick]
+        # find a key in `data_so_far` that is less than equal to timestamp
+        closest_timestamp = self._floor_of_timestamp(data_so_far, timestamp)
+        return data_so_far[closest_timestamp]
 
-    def set_value(self, variable: int, tick: int, value: int):
 
-        self.data[variable][tick] = value
-        self.stale[variable] = False
+    # TODO: cache should be cleaned, cant find in ref
+    def commit_cache(self, variable: int) -> None:
+        """
+        Variable in the site is committed (as part of a transaction), so the cache for
+        the variable is passed to the "data" attribute and cache is cleaned.
 
-    def commit_cache(self, variable: int):
-        pass
+        Args:
+            variable (int)
+        """
+        data_for_variable = self.data.get(variable, {})
+        cache_for_variable = self.cache.get(variable, {})
+        for time, value in cache_for_variable.items():
+            data_for_variable[time] = value
+            self.stale[variable] = False
+        self.data[variable] = data_for_variable
+        self.cache[variable] = {}
+
 
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """
@@ -186,14 +197,17 @@ class Site:
         return self.stale.get(variable)
 
 
-    def set_cache(self, variable: int, value: int, tick: int):
+    def set_cache(self, variable: int, value: int, timestamp: int):
         """
+        In the current site, for the given variable, store the value against the
+        timestamp. When the variable in the site is committed (as part of a transaction),
+        the cache is passed to the "data" attribute and cache should be cleaned.
 
         Returns:
 
         """
         cache_so_far = self.cache.get(variable, dict())
-        cache_so_far[tick] = value
+        cache_so_far[timestamp] = value
         self.cache[variable] = cache_so_far
 
 

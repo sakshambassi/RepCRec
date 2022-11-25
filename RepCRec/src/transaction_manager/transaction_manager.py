@@ -1,7 +1,7 @@
 from src.deadlock_manager import DeadlockManager
 from src.io_manager import IOManager
 from src.site import Site
-from src.enums import TransactionType
+from src.enums import TransactionType, InstructionType
 
 
 class TransactionManager:
@@ -14,7 +14,28 @@ class TransactionManager:
         self.transaction_start_timestamp = {}   # { transaction #, time }
         self.timestamp = 0
         self.total_sites = int(total_sites)
-        self.waitForLockQueue = None
+        self.waitForLockQueue = None        # something list of transactions
+        self.aborted_transactions = set()
+        self.variables_used_in_write_transactions = dict()  # {transaction_id: int, set of variables}
+
+
+    # TODO: canCommit or ref
+    def is_commit_allowed(self, transaction_id: int):
+        return transaction_id not in self.aborted_transactions
+
+
+    def commit(self, transaction_id: int) -> None:
+        """
+        When a transaction is committed, all the variables that it changed (made a write
+        to), should be saved/committed on all the sites.
+
+        Args:
+            transaction_id (int)
+        """
+        for variable in self.variables_used_in_write_transactions.get(transaction_id, {}):
+            for site in self.sites:
+                if site.is_active() and site.is_variable_present(variable):
+                    site.commit_cache(variable)
 
 
     # TODO: checkWaitQueue of ref
@@ -138,8 +159,44 @@ class TransactionManager:
         Returns:
 
         """
-        for i in range(len(self.transactions)):
+        for transaction in self.transactions:
             self.timestamp += 1
             while True:
                 if not self.detect_deadlock():
                     break
+            while True:
+                if not self.fetch_transaction_from_wait_queue():
+                    break
+
+            transaction_handler = {
+                InstructionType.FAIL: self.handle_transaction_fail,
+                InstructionType.RECOVER: self.handle_transaction_recover,
+                InstructionType.DUMP: self.handle_transaction_dump,
+                InstructionType.BEGINRO: self.handle_transaction_begin_readonly,
+                InstructionType.BEGIN: self.handle_transaction_begin,
+                InstructionType.END: self.handle_transaction_end,
+                InstructionType.NO: self.handle_transaction_none
+            }
+            transaction_handler[transaction.instruction_type]()
+
+
+    def handle_transaction_fail(self):
+        pass
+
+    def handle_transaction_recover(self):
+        pass
+
+    def handle_transaction_dump(self):
+        pass
+
+    def handle_transaction_begin(self):
+        pass
+
+    def handle_transaction_begin_readonly(self):
+        pass
+
+    def handle_transaction_end(self):
+        pass
+
+    def handle_transaction_none(self):
+        pass
