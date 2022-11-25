@@ -17,8 +17,8 @@ class LockManager:
         """
         A transaction acquires a lock of type "lock_type" on a variable.
 
-        So when a transaction acquires a lock, its id is added against the
-        variable in a table data structure.
+        So when a transaction acquires a lock, its id is added against the variable in a
+        table data structure.
 
         Args:
             transaction (int):
@@ -35,10 +35,9 @@ class LockManager:
     ) -> AcquireLockPermission:
         """
         - Allow if `variable` is not locked by any transaction.
-        - Allow if `variable` is already locked currently by the requesting
-          `transaction`.
-        - Allow if requesting `transaction` was the only one locking the
-          `variable` by a READ lock (like a lock promotion)
+        - Allow if `variable` is already locked currently by the requesting transaction.
+        - Allow if requesting `transaction` was the only one locking the `variable` by a
+          READ lock (like a lock promotion)
         - Not allowed otherwise.
 
         Args:
@@ -70,10 +69,9 @@ class LockManager:
     ) -> AcquireLockPermission:
         """
         - Allow if `variable` is not locked by any transaction.
-        - Allow if `variable` is locked by a READ lock (requested by any
-          transaction).
-        - Allow if `variable` is already locked currently by the requesting
-          `transaction` (even if WRITE lock).
+        - Allow if `variable` is locked by a READ lock (requested by any transaction).
+        - Allow if `variable` is already locked currently by the requesting transaction
+          (even if WRITE lock).
         - Not allowed otherwise.
 
         Args:
@@ -143,8 +141,8 @@ class LockManager:
 
     def release_transaction_lock(self, transaction_id: int):
         """
-        The lock table is iterated over all the keys (variables) and the
-        requested transaction is removed from the set against it when released.
+        The lock table is iterated over all the keys (variables) and the requested
+        transaction is removed from the set against it when released.
 
         Args:
             transaction_id (int)

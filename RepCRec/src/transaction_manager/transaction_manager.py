@@ -1,18 +1,75 @@
 from src.deadlock_manager import DeadlockManager
 from src.io_manager import IOManager
 from src.site import Site
+from src.enums import TransactionType
 
 
 class TransactionManager:
     def __init__(self, total_sites: int):
         self.DeadlockManager = DeadlockManager()
         self.IOManager = IOManager()
-        self.last_failed_timestamp = {}
+        self.last_failed_timestamp = {}     # {site, time}
         self.sites = []
         self.transactions = []              # store details about transactions
-        self.transaction_start_timestamp = {}
+        self.transaction_start_timestamp = {}   # { transaction #, time }
         self.timestamp = 0
         self.total_sites = int(total_sites)
+        self.waitForLockQueue = None
+
+
+    # TODO: checkWaitQueue of ref
+    def fetch_transaction_from_wait_queue(self):
+
+        for index, transaction in enumerate(self.waitForLockQueue):
+
+            if transaction.transaction_type == TransactionType.READONLY:
+                if self.can_fetch_readonly_transaction_from_wait_queue(
+                    index, transaction):
+                    return transaction
+
+            elif transaction.transaction_type == TransactionType.READ:
+                if self.can_fetch_read_transaction_from_wait_queue(
+                    index, transaction):
+                    return transaction
+
+            elif transaction.transaction_type == TransactionType.WRITE:
+                if self.can_fetch_write_transaction_from_wait_queue(
+                    index, transaction):
+                    return transaction
+
+
+    def can_fetch_readonly_transaction_from_wait_queue(self, index, transaction) -> bool:
+        start_time = self.transaction_start_timestamp[transaction]
+        for site in self.sites:
+            variable = transaction.variable
+            if not site.is_active() or not site.is_variable_present(variable):
+                continue
+
+            if site.is_variable_unique(variable) or site not in self.last_failed_timestamp:
+                self.waitForLockQueue.pop(index)
+                return True
+
+            if not site.is_variable_unique(variable) and site.is_stale(variable):
+                continue
+            
+            # TODO: Refer this condition again: seems weird in ref
+            last_fail_time = self.last_failed_timestamp[site]
+            last_commit_time = site.get_last_committed_time(variable, start_time)
+            if last_commit_time < last_fail_time and last_fail_time < start_time:
+                self.waitForLockQueue.pop(index)
+                return True
+        return False
+
+    def can_fetch_read_transaction_from_wait_queue(self, index, transaction) -> bool:
+        pass
+
+    def can_fetch_write_transaction_from_wait_queue(self, index, transaction) -> bool:
+        for site in self.sites:
+            variable = transaction.variable
+            if not site.is_active() or not site.is_variable_present(variable):
+                continue
+        pass
+
 
     def detect_deadlock(self):
         """

@@ -1,9 +1,11 @@
+from src.enums import TransactionType, InstructionType
+
 class Transaction:
     def __init__(
         self,
         id_: int,
-        transaction_type: int,
-        instruction_type: int,
+        transaction_type: TransactionType,
+        instruction_type: InstructionType,
         site_id: int,
         variable: int,
         value: float,

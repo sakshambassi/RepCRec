@@ -47,16 +47,17 @@ class Site:
         """
         pass
 
-    def initialize(self):
-        """ Initializes the site object with data
 
-        Returns:
-            None
+    def initialize(self) -> None:
+        """
+        Initializes the site object with data ie { variable: { time, value } }.
+        Even variables are present in all sites as per specification.
         """
         for i in range(1, COUNT_VARIABLES + 1):
-            if i % 2 == 0:
+            if i % 2 == 0 or 1 + (i % 10) == self.id:
                 self.stale[i] = False
-            self.data[i] = {0: i * 10}
+                self.data[i] = {0: i * 10}
+
 
     def _floor_of_timestamp(
         self, data_per_variable: Dict[int, int], timestamp: int
@@ -91,14 +92,14 @@ class Site:
     def commit_cache(self, variable: int):
         pass
 
-    def get_last_committed_time(self, variable: int, tick: int) -> int:
+    def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """
 
         Returns:
 
         """
         data_so_far = self.data[variable]
-        return self._floor_of_timestamp(data_so_far, tick)
+        return self._floor_of_timestamp(data_so_far, timestamp)
 
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
@@ -108,17 +109,25 @@ class Site:
         """
         return self.lock_manager.get_all_transaction_locks(variable)
 
-    def dump(self):
-        """
 
-        Returns:
-
+    # TODO: Print
+    def dump(self, timestamp: int) -> None:
         """
-        pass
+        Access the values of all variables in the site at/floor timestamp.
+
+        Args:
+            timestamp (int)
+        """
+        for variable, data_so_far in self.data.items():
+            if timestamp in data_so_far:
+                value = data_so_far[timestamp]
+            else:
+                value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
+
 
     # TODO: remove comment
     # def isUp def is_up
-    def get_status(self) -> bool:
+    def is_active(self) -> bool:
         """
 
         Returns:
@@ -163,11 +172,19 @@ class Site:
 
     def is_stale(self, variable: int) -> bool:
         """
+        When a site has failed/shutdown, even variables in it are marked stale. This is
+        because they can go out of sync with the copies of even variables on other
+        (active) sites.
 
-        Returns:
+        This function returns if a variable in the site is marked stale.
 
+        Args:
+            variable (int)
+
+        Returns: bool
         """
         return self.stale.get(variable)
+
 
     def set_cache(self, variable: int, value: int, tick: int):
         """
@@ -179,18 +196,25 @@ class Site:
         cache_so_far[tick] = value
         self.cache[variable] = cache_so_far
 
-    def is_variable_unique(self, variable: int):
+
+    def is_variable_unique(self, variable: int) -> bool:
         """
+        Even variables are present on all sites and odd variables are present on only
+        one site as per specification. So only odd variables can be unique.
 
-        Returns:
+        Args:
+            variable (int)
 
+        Returns: bool
         """
         return variable in self.data and variable % 2 != 0
 
-    def is_variable_present(self, variable: int):
+
+    def is_variable_present(self, variable: int) -> bool:
         """
+        Args:
+            variable (int)
 
-        Returns:
-
+        Returns: bool
         """
         return variable in self.data
