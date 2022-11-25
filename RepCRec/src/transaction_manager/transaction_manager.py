@@ -14,7 +14,7 @@ class TransactionManager:
         self.transaction_start_timestamp = {}   # { transaction #, time }
         self.timestamp = 0
         self.total_sites = int(total_sites)
-        self.waitForLockQueue = None        # something list of transactions
+        self.waitForLockQueue = []        # something list of transactions
         self.aborted_transactions = set()
         self.variables_used_in_write_transactions = dict()  # {transaction_id: int, set of variables}
 
