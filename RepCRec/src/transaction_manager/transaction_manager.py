@@ -12,6 +12,7 @@ class TransactionManager:
         self.IOManager = IOManager()
         self.last_failed_timestamp = {}  # {site, time}
         self.sites = []  # object of sites
+        self.site_to_transactions = {}  # {site, List(Transaction)}
         self.transactions = []  # store details about transactions
         self.transaction_start_timestamp = {}  # { transaction #, time }
         self.timestamp = 0
@@ -86,7 +87,8 @@ class TransactionManager:
 
             # site failed before the start of transaction
             last_fail_time = self.last_failed_timestamp[site]
-            last_commit_time = site.get_last_committed_time(variable, start_time)
+            last_commit_time = site.get_last_committed_time(
+                variable, start_time)
             if last_commit_time < last_fail_time and last_fail_time < start_time:
                 continue
             return True
@@ -117,17 +119,6 @@ class TransactionManager:
             if not site.is_active() or not site.is_variable_present(variable):
                 continue
         pass
-
-    def pop_waitq_transaction(self, pop_transaction_id: int):
-        """ pops transaction from the wait queue
-
-        Args:
-            transaction_id (int): transaction id
-        """
-        for index, transaction in enumerate(self.wait_for_lock_queue):
-            if transaction.id_ == pop_transaction_id:
-                self.wait_for_lock_queue.pop(index)
-
 
     def detect_deadlock(self):
         """ detects deadlocks in graph, uses DeadlockManager module
@@ -174,16 +165,48 @@ class TransactionManager:
         return latest_transaction_id
 
     def handle_transaction_fail(self, transaction: Transaction):
-        pass
+        """ handles transaction when it is FAIL
+
+        Args:
+            transaction (Transaction)
+        """
+        print(f'Handling FAIL transaction, site {transaction.site_id} down.')
+        self.sites[transaction.site_id - 1].release_all_locks()
+        self.sites[transaction.site_id - 1].shutdown()
+        if transaction.site_id in self.site_to_transactions:
+            site_transactions = self.site_to_transactions[transaction.site_id]
+            for site_transaction in site_transactions:
+                self.aborted_transactions.add(site_transaction)
+            del self.site_to_transactions[transaction.site_id]
+        self.last_failed_timestamp[
+            self.sites[
+                transaction.site_id-1
+            ]
+        ] = self.timestamp
 
     def handle_transaction_recover(self, transaction: Transaction):
+        """ handles transaction when it is RECOVER
+
+        Args:
+            transaction (Transaction)
+        """
         self.sites[transaction.site_id - 1].activate()
 
     def handle_transaction_dump(self, transaction: Transaction):
+        """ handles transaction when it is DUMP
+
+        Args:
+            transaction (Transaction)
+        """
         for site in self.sites:
             site.dump(self.timestamp)
 
     def handle_transaction_begin(self, transaction: Transaction):
+        """ handles transaction when it is BEGIN
+
+        Args:
+            transaction (Transaction)
+        """
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     # TODO: May differ from `handle_transaction_begin` when print statements are added
@@ -203,11 +226,21 @@ class TransactionManager:
 
         if transaction.transaction_type == TransactionType.WRITE:
             pass
-    
+
     # TODO: canCommit or ref
     def is_commit_allowed(self, transaction_id: int):
         return transaction_id not in self.aborted_transactions
-    
+
+    def pop_waitq_transaction(self, pop_transaction_id: int):
+        """ pops transaction from the wait queue
+
+        Args:
+            transaction_id (int): transaction id
+        """
+        for index, transaction in enumerate(self.wait_for_lock_queue):
+            if transaction.id_ == pop_transaction_id:
+                self.wait_for_lock_queue.pop(index)
+
     def prepare_input(self, filename: str):
         """ creates sites and pushes it to self.sites
 

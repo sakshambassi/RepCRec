@@ -128,7 +128,8 @@ class Site:
             if timestamp in data_so_far:
                 value = data_so_far[timestamp]
             else:
-                value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
+                value = data_so_far[self._floor_of_timestamp(
+                    data_so_far, timestamp)]
 
     # TODO: remove comment
     # def isUp def is_up
