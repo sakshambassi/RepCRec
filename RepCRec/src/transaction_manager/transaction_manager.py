@@ -341,17 +341,13 @@ class TransactionManager:
         self.DeadlockManager.delete_edges_of_source(transaction_id=transaction.id)
 
     def handle_transaction_none(self, transaction: Transaction):
-        if transaction.transaction_type == TransactionType.READONLY:
-            if not self.check_readonly_transaction_from_wait_queue(transaction):
-                self.wait_for_lock_queue.append(transaction)
-
-        if transaction.transaction_type == TransactionType.READ:
-            if not self.check_read_transaction_from_wait_queue(transaction):
-                self.wait_for_lock_queue.append(transaction)
-
-        if transaction.transaction_type == TransactionType.WRITE:
-            if not self.check_write_transaction_from_wait_queue(transaction):
-                self.wait_for_lock_queue.append(transaction)
+        check_wait_queue_helper = {
+            TransactionType.READONLY: self.check_readonly_transaction_from_wait_queue,
+            TransactionType.READ: self.check_read_transaction_from_wait_queue,
+            TransactionType.WRITE: self.check_write_transaction_from_wait_queue
+        }
+        if not check_wait_queue_helper[transaction.transaction_type]:
+            self.wait_for_lock_queue.append(transaction)
 
     def is_commit_allowed(self, transaction_id: int):
         return transaction_id not in self.aborted_transactions
