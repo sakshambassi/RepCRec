@@ -149,6 +149,15 @@ class Site:
         """
         self.lock_manager.release_all_locks()
 
+    def release_all_transaction_locks(self, transaction_id: int):
+        """ release all given transaction's locks
+
+        Args:
+            transaction_id (int): id of transaction of which transaction locks need to be released
+        """
+        self.lock_manager.release_transaction_lock(transaction_id)
+
+
     def release_lock(self, variable: int) -> bool:
         """
 

@@ -22,6 +22,15 @@ class TransactionManager:
             dict()
         )  # {transaction_id: int, set of variables}
 
+    # TODO: implement the below function
+    def abort_transaction(self, transaction_id: int):
+        """ aborts the provided transaction
+
+        Args:
+            transaction_id (int): id of transaction
+        """
+        pass
+
     def commit(self, transaction_id: int) -> None:
         """ When a transaction is committed, all the variables that it changed (made a write
         to), should be saved/committed on all the sites.
@@ -190,6 +199,8 @@ class TransactionManager:
         Args:
             transaction (Transaction)
         """
+        print(
+            f'Handling RECOVER transaction, site {transaction.site_id} recovered succesfully.')
         self.sites[transaction.site_id - 1].activate()
 
     def handle_transaction_dump(self, transaction: Transaction):
@@ -207,14 +218,37 @@ class TransactionManager:
         Args:
             transaction (Transaction)
         """
+        print(
+            f'Handling BEGIN transaction, transaction {transaction.id} begun succesfully.')
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     # TODO: May differ from `handle_transaction_begin` when print statements are added
     def handle_transaction_begin_readonly(self, transaction: Transaction):
+        """ handles transaction when it is BEGINRO
+
+        Args:
+            transaction (Transaction)
+        """
+        print(
+            f'Handling BEGINRO transaction, transaction {transaction.id} of type read-only begun.')
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     def handle_transaction_end(self, transaction: Transaction):
-        pass
+        """ handles transaction when it is END
+
+        Args:
+            transaction (Transaction)
+        """
+        if self.is_commit_allowed(transaction_id=transaction.id):
+            self.commit(transaction_id=transaction.id)
+        else:
+            self.abort_transaction(transaction_id=transaction.id)
+        del self.transaction_start_timestamp[transaction.id]
+        self.pop_waitq_transaction(transaction.id)
+        for site_id in range(self.total_sites):
+            self.sites[site_id].release_all_transaction_locks(transaction.id)
+        self.DeadlockManager.delete_edges_of_source(transaction_id=transaction.id)
+
 
     def handle_transaction_none(self, transaction: Transaction):
         if transaction.transaction_type == TransactionType.READONLY:
@@ -255,8 +289,6 @@ class TransactionManager:
             self.sites[id_].initialize()
 
         self.transactions = self.IOManager.input_file(filename)
-
-        # TODO: execute()
         self.start_execution()
 
     def start_execution(self):

@@ -6,17 +6,6 @@ class DeadlockManager:
         self.nodes = int(config['CONSTANTS']['num_transactions'])
         self.adjacency_list = [list() for _ in range(self.nodes)]
         self.deadlocked_transactions = set()
-    
-    def delete_edges_of_source(self, transaction_id: int):
-        """ deletes all edges of the source transaction
-
-        Args:
-            transaction_id (int): source transaction id
-        """
-        self.adjacency_list[transaction_id] = list()    # remove outgoing transactions from source
-        for node in range(self.nodes):
-            # remove all incoming edges to source transaction
-            self.adjacency_list[node].remove(transaction_id)
 
     def detect_cycle_in_graph(self, visited: list, recursion_stack: list, node: int):
         """ detects cycle in graph
@@ -43,6 +32,18 @@ class DeadlockManager:
 
         recursion_stack[node] = False  # resetting
         return False
+
+    def delete_edges_of_source(self, transaction_id: int):
+        """ deletes all edges of the source transaction
+
+        Args:
+            transaction_id (int): source transaction id
+        """
+        self.adjacency_list[transaction_id] = list()    # remove outgoing transactions from source
+        for node in range(self.nodes):
+            # remove all incoming edges to source transaction
+            if transaction_id in self.adjacency_list[node]:
+                self.adjacency_list[node].remove(transaction_id)
 
     def detect_deadlock_in_graph(self):
         """ detects deadlock in graph
