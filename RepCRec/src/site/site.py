@@ -1,7 +1,7 @@
 import math
 from typing import Dict, Set
 
-from src.enums import LockType
+from src.enums import LockType, AcquireLockPermission, LockType
 from src.lock_manager import LockManager
 from src.utils import config
 
@@ -17,17 +17,16 @@ class Site:
         self.stale = dict()
         self.cache = dict()  # {variable: {time: value}}
 
-    def acquire_lock(self, transaction: int, variable: int, locktype: LockType) -> bool:
+    def acquire_lock(self, transaction_id: int, variable: int, locktype: LockType):
         """
 
         Returns:
 
         """
-        pass
+        self.lock_manager.acquire_lock(transaction_id, variable, locktype)
 
     # TODO: remove comment
     # def recover
-
     def activate(self):
         """
 
@@ -35,6 +34,16 @@ class Site:
 
         """
         self.active = True
+
+    def can_acquire_read_lock(
+        self, variable: int, transaction_id: int
+    ) -> AcquireLockPermission:
+        return self.lock_manager.can_acquire_read_lock(variable, transaction_id)
+
+    def can_acquire_write_lock(
+        self, variable: int, transaction_id: int
+    ) -> AcquireLockPermission:
+        return self.lock_manager.can_acquire_write_lock(variable, transaction_id)
 
     def check_variable_exists(self, variable: int) -> bool:
         """
@@ -128,8 +137,7 @@ class Site:
             if timestamp in data_so_far:
                 value = data_so_far[timestamp]
             else:
-                value = data_so_far[self._floor_of_timestamp(
-                    data_so_far, timestamp)]
+                value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
 
     # TODO: remove comment
     # def isUp def is_up
@@ -156,7 +164,6 @@ class Site:
             transaction_id (int): id of transaction of which transaction locks need to be released
         """
         self.lock_manager.release_transaction_lock(transaction_id)
-
 
     def release_lock(self, variable: int) -> bool:
         """
