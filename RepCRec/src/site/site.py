@@ -138,6 +138,7 @@ class Site:
                 value = data_so_far[timestamp]
             else:
                 value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
+        print(f"x{variable}:{value}")
 
     # TODO: remove comment
     # def isUp def is_up

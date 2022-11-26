@@ -4,6 +4,8 @@ from src.io_manager import IOManager
 from src.site import Site
 from src.transaction_manager import Transaction
 
+# TODO: abort related code
+#     : verify deadlock related things
 
 class TransactionManager:
     def __init__(self, total_sites: int):
@@ -16,12 +18,10 @@ class TransactionManager:
         self.transactions = []  # store details about transactions
         self.transaction_start_timestamp = {}  # { transaction #, time }
         self.timestamp = 0
-        self.total_sites = int(total_sites)
+        self.total_sites = total_sites
         self.wait_for_lock_queue = []  # something list of transactions
         self.write_transactions_to_variables = {}  # {transaction_id: set (variables)}
-        self.variables_used_in_write_transactions = (
-            dict()
-        )  # {transaction_id: int, set of variables}
+
 
     # TODO: implement the below function
     def abort_transaction(self, transaction_id: int):
@@ -76,12 +76,20 @@ class TransactionManager:
         Args:
             transaction_id (int)
         """
-        for variable in self.variables_used_in_write_transactions.get(
+        for variable in self.write_transactions_to_variables.get(
             transaction_id, set()
         ):
             for site in self.sites:
                 if site.is_active() and site.is_variable_present(variable):
                     site.commit_cache(variable)
+        print(f"Transaction {transaction_id} commits")
+
+        # clear transaction metadata in memory
+        self.write_transactions_to_variables.pop(transaction_id)
+        for site in self.sites:
+            if site.id in self.site_to_transactions:
+                if transaction_id in self.site_to_transactions[site.id]:
+                    self.site_to_transactions[site.id].remove(transaction_id)
 
     def check_wait_queue(self):
         """_summary_
@@ -90,21 +98,11 @@ class TransactionManager:
             _type_: _description_
         """
         for index, transaction in enumerate(self.wait_for_lock_queue):
-
-            if transaction.transaction_type == TransactionType.READONLY:
-                if self.check_readonly_transaction_from_wait_queue(transaction):
-                    self.wait_for_lock_queue.pop(index)
-                    return transaction
-
-            elif transaction.transaction_type == TransactionType.READ:
-                if self.check_read_transaction_from_wait_queue(transaction):
-                    self.wait_for_lock_queue.pop(index)
-                    return transaction
-
-            elif transaction.transaction_type == TransactionType.WRITE:
-                if self.check_write_transaction_from_wait_queue(transaction):
-                    self.wait_for_lock_queue.pop(index)
-                    return transaction
+            if self.get_check_wait_queue_helper(transaction.transaction_type)(transaction):
+                self.wait_for_lock_queue.pop(index)
+                print(
+                    f"Transaction: {transaction.id}, Variable: {transaction.variable} cleared from wait queue")
+                return True
 
     def check_readonly_transaction_from_wait_queue(self, transaction) -> bool:
         """
@@ -266,13 +264,20 @@ class TransactionManager:
                 max_time = timestamp
         return latest_transaction_id
 
+    def get_check_wait_queue_helper(self, transaction_type: TransactionType):
+        check_wait_queue_helper = {
+            TransactionType.READONLY: self.check_readonly_transaction_from_wait_queue,
+            TransactionType.READ: self.check_read_transaction_from_wait_queue,
+            TransactionType.WRITE: self.check_write_transaction_from_wait_queue
+        }
+        return check_wait_queue_helper[transaction_type]
+
     def handle_transaction_fail(self, transaction: Transaction):
         """ handles transaction when it is FAIL
 
         Args:
             transaction (Transaction)
         """
-        print(f"Handling FAIL transaction, site {transaction.site_id} down.")
         self.sites[transaction.site_id - 1].release_all_locks()
         self.sites[transaction.site_id - 1].shutdown()
         if transaction.site_id in self.site_to_transactions:
@@ -281,6 +286,7 @@ class TransactionManager:
                 self.aborted_transactions.add(site_transaction)
             del self.site_to_transactions[transaction.site_id]
         self.last_failed_timestamp[self.sites[transaction.site_id - 1]] = self.timestamp
+        print(f"Handling FAIL transaction, site {transaction.site_id} down.")
 
     def handle_transaction_recover(self, transaction: Transaction):
         """ handles transaction when it is RECOVER
@@ -288,10 +294,10 @@ class TransactionManager:
         Args:
             transaction (Transaction)
         """
+        self.sites[transaction.site_id - 1].activate()
         print(
             f"Handling RECOVER transaction, site {transaction.site_id} recovered succesfully."
         )
-        self.sites[transaction.site_id - 1].activate()
 
     def handle_transaction_dump(self, transaction: Transaction):
         """ handles transaction when it is DUMP
@@ -300,6 +306,7 @@ class TransactionManager:
             transaction (Transaction)
         """
         for site in self.sites:
+            print(f"Handling DUMP for site {site.id}")
             site.dump(self.timestamp)
 
     def handle_transaction_begin(self, transaction: Transaction):
@@ -341,13 +348,9 @@ class TransactionManager:
         self.DeadlockManager.delete_edges_of_source(transaction_id=transaction.id)
 
     def handle_transaction_none(self, transaction: Transaction):
-        check_wait_queue_helper = {
-            TransactionType.READONLY: self.check_readonly_transaction_from_wait_queue,
-            TransactionType.READ: self.check_read_transaction_from_wait_queue,
-            TransactionType.WRITE: self.check_write_transaction_from_wait_queue
-        }
-        if not check_wait_queue_helper[transaction.transaction_type]:
+        if not self.get_check_wait_queue_helper(transaction.transaction_type)(transaction):
             self.wait_for_lock_queue.append(transaction)
+            print(f"Transaction {transaction.id}, variable x{transaction.variable} pushed to wait queue")
 
     def is_commit_allowed(self, transaction_id: int):
         return transaction_id not in self.aborted_transactions

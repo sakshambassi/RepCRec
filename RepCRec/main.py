@@ -10,7 +10,7 @@ def main():
 
     config = read_config(configdir)
     transaction_manager = TransactionManager(
-        total_sites=config["CONSTANTS"]["num_sites"]
+        total_sites=int(config["CONSTANTS"]["num_sites"])
     )
 
     # TODO: complete prepare_input and follow the order of events
