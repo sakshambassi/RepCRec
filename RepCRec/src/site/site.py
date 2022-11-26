@@ -13,9 +13,9 @@ class Site:
         self.id = id_
         self.active = True
         self.lock_manager = LockManager()
-        self.data = dict()                      # {variable: {time: value}}
+        self.data = dict()  # {variable: {time: value}}
         self.stale = dict()
-        self.cache = dict()                     # {variable: {time: value}}
+        self.cache = dict()  # {variable: {time: value}}
 
     def acquire_lock(self, transaction: int, variable: int, locktype: LockType) -> bool:
         """
@@ -47,7 +47,6 @@ class Site:
         """
         pass
 
-
     def initialize(self) -> None:
         """
         Initializes the site object with data ie { variable: { time, value } }.
@@ -58,12 +57,11 @@ class Site:
                 self.stale[i] = False
                 self.data[i] = {0: i * 10}
 
-
     def _floor_of_timestamp(
         self, data_per_variable: Dict[int, int], timestamp: int
     ) -> int:
         closeness = math.inf
-        closest_timestamp = None
+        closest_timestamp = -1
         for current_timestamp, _ in data_per_variable.items():
             if (
                 current_timestamp < timestamp
@@ -84,7 +82,6 @@ class Site:
         closest_timestamp = self._floor_of_timestamp(data_so_far, timestamp)
         return data_so_far[closest_timestamp]
 
-
     # TODO: cache should be cleaned, cant find in ref
     def commit_cache(self, variable: int) -> None:
         """
@@ -101,7 +98,6 @@ class Site:
             self.stale[variable] = False
         self.data[variable] = data_for_variable
         self.cache[variable] = {}
-
 
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """
@@ -120,7 +116,6 @@ class Site:
         """
         return self.lock_manager.get_all_transaction_locks(variable)
 
-
     # TODO: Print
     def dump(self, timestamp: int) -> None:
         """
@@ -134,7 +129,6 @@ class Site:
                 value = data_so_far[timestamp]
             else:
                 value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
-
 
     # TODO: remove comment
     # def isUp def is_up
@@ -165,7 +159,6 @@ class Site:
         """
         pass
 
-
     def shutdown(self) -> None:
         """
         When a site is shutdown, its active attribute is set to False
@@ -179,7 +172,6 @@ class Site:
             if i % 2 == 0:
                 self.stale[i] = True
         self.cache = dict()
-
 
     def is_stale(self, variable: int) -> bool:
         """
@@ -196,7 +188,6 @@ class Site:
         """
         return self.stale.get(variable)
 
-
     def set_cache(self, variable: int, value: int, timestamp: int):
         """
         In the current site, for the given variable, store the value against the
@@ -210,7 +201,6 @@ class Site:
         cache_so_far[timestamp] = value
         self.cache[variable] = cache_so_far
 
-
     def is_variable_unique(self, variable: int) -> bool:
         """
         Even variables are present on all sites and odd variables are present on only
@@ -222,7 +212,6 @@ class Site:
         Returns: bool
         """
         return variable in self.data and variable % 2 != 0
-
 
     def is_variable_present(self, variable: int) -> bool:
         """

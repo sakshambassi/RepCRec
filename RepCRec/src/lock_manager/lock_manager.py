@@ -9,7 +9,6 @@ class LockManager:
         # { variable: int, lock: Lock }
         self.table = dict()
 
-
     # TODO: Are there any checks before `acquire_lock` is called?
     def acquire_lock(
         self, transaction_id: int, variable: int, lock_type: LockType
@@ -28,7 +27,6 @@ class LockManager:
         lock = self.table.get(variable, Lock(lock_type, {}))
         lock.transactions.add(transaction_id)
         self.table[variable] = lock
-
 
     def can_acquire_write_lock(
         self, variable: int, transaction_id: int
@@ -63,7 +61,6 @@ class LockManager:
 
         return AcquireLockPermission.NOT_ALLOWED
 
-
     def can_acquire_read_lock(
         self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
@@ -94,7 +91,6 @@ class LockManager:
 
         return AcquireLockPermission.NOT_ALLOWED
 
-
     def get_lock_type(self, variable: int) -> LockType:
         """
 
@@ -105,7 +101,6 @@ class LockManager:
 
         """
         pass
-
 
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
@@ -119,13 +114,11 @@ class LockManager:
             return self.table.get(variable).transactions
         return set()
 
-
     def release_all_locks(self):
         """
         Lock table is cleared/reinitialized when locks are to be released.
         """
         self.table = dict()
-
 
     def release_lock(self, variable: int) -> bool:
         """
@@ -137,7 +130,6 @@ class LockManager:
 
         """
         pass
-
 
     def release_transaction_lock(self, transaction_id: int):
         """

@@ -1,5 +1,6 @@
 from src.enums import TransactionType, InstructionType
 
+
 class Transaction:
     def __init__(
         self,
