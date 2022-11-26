@@ -190,14 +190,13 @@ class TransactionManager:
 
         - The site should be up.
         - The variable requested by the transaction should be present on the site.
-        - Transaction should be able to acquire a lock for the variable on the site.
-        - Read lock can be acquired on the requested variable in the site.
+        - Transaction should be able to acquire a lock for the variable on all the site.
 
         Args:
             transaction (Transaction)
 
         Returns:
-            bool: Whether the given transaction can be applied onto a site.
+            bool: Whether the given transaction can be applied onto all the site.
         """
 
         # TODO: some canSkipWaitLockQueue logic
