@@ -10,14 +10,27 @@ class IOManager:
         pass
 
     @staticmethod
-    def get_transaction_or_site_id(input_: str):
-        """ fetches the transaction or site id
+    def get_site_id(input_: str):
+        """ fetches the site id
 
         Args:
             input_ (str): input string text
 
         Returns:
-            transaction_id or site_id (int)
+            site_id (int)
+        """
+        begin, end = input_.find("("), input_.find(")")
+        return int(input_[begin + 1: end])
+
+    @staticmethod
+    def get_transaction_id(input_: str):
+        """ fetches the transaction id
+
+        Args:
+            input_ (str): input string text
+
+        Returns:
+            transaction_id (int)
         """
         begin, end = input_.find("("), input_.find(")")
         return int(input_[begin + 2 : end])
@@ -41,22 +54,22 @@ class IOManager:
                     transaction_id, site_id, variable, value = 0, 0, 0, 0
                     if line.find("beginRO") == 0:
                         instruction = InstructionType.BEGINRO
-                        transaction_id = IOManager.get_transaction_or_site_id(line)
+                        transaction_id = IOManager.get_transaction_id(line)
                         ro_transactions.append(transaction_id)
                     elif line.find("begin") == 0:
                         instruction = InstructionType.BEGIN
-                        transaction_id = IOManager.get_transaction_or_site_id(line)
+                        transaction_id = IOManager.get_transaction_id(line)
                     elif line.find("end") == 0:
                         instruction = InstructionType.END
-                        transaction_id = IOManager.get_transaction_or_site_id(line)
+                        transaction_id = IOManager.get_transaction_id(line)
                     elif line.find("fail") == 0:
                         instruction = InstructionType.FAIL
-                        site_id = IOManager.get_transaction_or_site_id(line)
+                        site_id = IOManager.get_site_id(line)
                     elif line.find("dump") == 0:
                         instruction = InstructionType.DUMP
                     elif line.find("recover") == 0:
                         instruction = InstructionType.RECOVER
-                        site_id = IOManager.get_transaction_or_site_id(line)
+                        site_id = IOManager.get_site_id(line)
                     else:
                         instruction = InstructionType.NO
                         if line[0] == "W":

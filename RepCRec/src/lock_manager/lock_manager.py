@@ -24,7 +24,7 @@ class LockManager:
             variable (int):
             lock_type (LockType):
         """
-        lock = self.table.get(variable, Lock(lock_type, {}))
+        lock = self.table.get(variable, Lock(lock_type, set()))
         lock.transactions.add(transaction_id)
         self.table[variable] = lock
 
@@ -143,4 +143,5 @@ class LockManager:
             Set of transaction_ids that have requested a lock on the `variable`
         """
         for _, lock in self.table.items():
-            lock.transactions.remove(transaction_id)
+            if transaction_id in lock.transactions:
+                lock.transactions.remove(transaction_id)

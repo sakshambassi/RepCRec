@@ -3,7 +3,7 @@ from typing import Dict, Set
 
 from src.enums import LockType, AcquireLockPermission, LockType
 from src.lock_manager import LockManager
-from src.utils import config
+from src.utils import config, log
 
 COUNT_VARIABLES = int(config["CONSTANTS"]["num_variables"])
 
@@ -74,7 +74,7 @@ class Site:
         for current_timestamp, _ in data_per_variable.items():
             if (
                 current_timestamp < timestamp
-                and timestamp - closest_timestamp < closeness
+                and timestamp - current_timestamp < closeness
             ):
                 closeness = timestamp - current_timestamp
                 closest_timestamp = current_timestamp
@@ -106,7 +106,12 @@ class Site:
             data_for_variable[time] = value
             self.stale[variable] = False
         self.data[variable] = data_for_variable
+        self.log_commit(variable, self.cache[variable])
         self.cache[variable] = {}
+
+    def log_commit(self, variable: int, committed_data: Dict[int, int]):
+        for timestamp, value in committed_data.items():
+            log(f"Committed variable x{variable}; with value {value}; on site {self.id}; at time {timestamp}")
 
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """
@@ -125,7 +130,6 @@ class Site:
         """
         return self.lock_manager.get_all_transaction_locks(variable)
 
-    # TODO: Print
     def dump(self, timestamp: int) -> None:
         """
         Access the values of all variables in the site at/floor timestamp.
@@ -138,7 +142,8 @@ class Site:
                 value = data_so_far[timestamp]
             else:
                 value = data_so_far[self._floor_of_timestamp(data_so_far, timestamp)]
-        print(f"x{variable}:{value}")
+            log(f"x{variable}:{value}", end=" ")
+        log("")
 
     # TODO: remove comment
     # def isUp def is_up

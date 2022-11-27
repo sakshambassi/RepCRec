@@ -3,9 +3,11 @@ from src.enums import TransactionType, InstructionType, AcquireLockPermission, L
 from src.io_manager import IOManager
 from src.site import Site
 from src.transaction_manager import Transaction
+from src.utils import log
 
 # TODO: abort related code
 #     : verify deadlock related things
+
 
 class TransactionManager:
     def __init__(self, total_sites: int):
@@ -21,7 +23,6 @@ class TransactionManager:
         self.total_sites = total_sites
         self.wait_for_lock_queue = []  # something list of transactions
         self.write_transactions_to_variables = {}  # {transaction_id: set (variables)}
-
 
     # TODO: implement the below function
     def abort_transaction(self, transaction_id: int):
@@ -76,16 +77,16 @@ class TransactionManager:
         Args:
             transaction_id (int)
         """
-        for variable in self.write_transactions_to_variables.get(
-            transaction_id, set()
-        ):
+        for variable in self.write_transactions_to_variables.get(transaction_id, set()):
             for site in self.sites:
                 if site.is_active() and site.is_variable_present(variable):
                     site.commit_cache(variable)
-        print(f"Transaction {transaction_id} commits")
+        log(f"Transaction {transaction_id} commits")
 
         # clear transaction metadata in memory
-        self.write_transactions_to_variables.pop(transaction_id)
+        if transaction_id in self.write_transactions_to_variables:
+            self.write_transactions_to_variables.pop(transaction_id)
+
         for site in self.sites:
             if site.id in self.site_to_transactions:
                 if transaction_id in self.site_to_transactions[site.id]:
@@ -98,10 +99,10 @@ class TransactionManager:
             _type_: _description_
         """
         for index, transaction in enumerate(self.wait_for_lock_queue):
-            if self.get_check_wait_queue_helper(transaction.transaction_type)(transaction):
+            if self.get_check_wait_queue_helper(transaction.transaction_type)(
+                transaction
+            ):
                 self.wait_for_lock_queue.pop(index)
-                print(
-                    f"Transaction: {transaction.id}, Variable: {transaction.variable} cleared from wait queue")
                 return True
 
     def check_readonly_transaction_from_wait_queue(self, transaction) -> bool:
@@ -122,7 +123,7 @@ class TransactionManager:
         Returns:
             bool: Whether the given transaction can be applied onto a site.
         """
-        start_time = self.transaction_start_timestamp[transaction]
+        start_time = self.transaction_start_timestamp[transaction.id]
         variable = transaction.variable
         for site in self.sites:
             if not site.is_active() or not site.is_variable_present(variable):
@@ -220,6 +221,9 @@ class TransactionManager:
             if not site.is_active() or not site.is_variable_present(variable):
                 continue
 
+            log(f"Transaction T{transaction.id} acquires WRITE lock on variable {variable} at site {site.id}")
+            site.acquire_lock(transaction.id, variable, LockType.WRITE)
+            site.set_cache(variable, transaction.value, self.timestamp)
             self.add_transaction_to_site(site, transaction)
             self.add_variable_to_write_transaction(transaction, variable)
         return True
@@ -236,11 +240,11 @@ class TransactionManager:
                 transactions=deadlocks
             )
             self.DeadlockManager.delete_edges_of_source(latest_transaction_id)
-            print(f"There exists deadlock with number of transactions={len(deadlocks)}")
+            log(f"There exists deadlock with number of transactions={len(deadlocks)}")
             self.aborted_transactions.add(latest_transaction_id)
             for site_id in range(self.total_sites):
                 self.sites[site_id].release_all_locks(latest_transaction_id)
-            print(f"Latest transaction {latest_transaction_id} is aborted.")
+            log(f"Latest transaction {latest_transaction_id} is aborted.")
             self.abort_transaction(latest_transaction_id)
             self.pop_waitq_transaction()
             return True
@@ -268,7 +272,7 @@ class TransactionManager:
         check_wait_queue_helper = {
             TransactionType.READONLY: self.check_readonly_transaction_from_wait_queue,
             TransactionType.READ: self.check_read_transaction_from_wait_queue,
-            TransactionType.WRITE: self.check_write_transaction_from_wait_queue
+            TransactionType.WRITE: self.check_write_transaction_from_wait_queue,
         }
         return check_wait_queue_helper[transaction_type]
 
@@ -286,7 +290,7 @@ class TransactionManager:
                 self.aborted_transactions.add(site_transaction)
             del self.site_to_transactions[transaction.site_id]
         self.last_failed_timestamp[self.sites[transaction.site_id - 1]] = self.timestamp
-        print(f"Handling FAIL transaction, site {transaction.site_id} down.")
+        log(f"Site {transaction.site_id} failed at time {self.timestamp}")
 
     def handle_transaction_recover(self, transaction: Transaction):
         """ handles transaction when it is RECOVER
@@ -295,9 +299,7 @@ class TransactionManager:
             transaction (Transaction)
         """
         self.sites[transaction.site_id - 1].activate()
-        print(
-            f"Handling RECOVER transaction, site {transaction.site_id} recovered succesfully."
-        )
+        log(f"Site {transaction.site_id} recovered at time {self.timestamp}")
 
     def handle_transaction_dump(self, transaction: Transaction):
         """ handles transaction when it is DUMP
@@ -306,7 +308,7 @@ class TransactionManager:
             transaction (Transaction)
         """
         for site in self.sites:
-            print(f"Handling DUMP for site {site.id}")
+            log(f"DUMP data for site {site.id}")
             site.dump(self.timestamp)
 
     def handle_transaction_begin(self, transaction: Transaction):
@@ -315,9 +317,7 @@ class TransactionManager:
         Args:
             transaction (Transaction)
         """
-        print(
-            f"Handling BEGIN transaction, transaction {transaction.id} begun succesfully."
-        )
+        log(f"Transaction T{transaction.id} BEGIN at time {self.timestamp}")
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     def handle_transaction_begin_readonly(self, transaction: Transaction):
@@ -326,9 +326,7 @@ class TransactionManager:
         Args:
             transaction (Transaction)
         """
-        print(
-            f"Handling BEGINRO transaction, transaction {transaction.id} of type read-only begun."
-        )
+        log(f"Transaction T{transaction.id} BEGINRO at time {self.timestamp}")
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     def handle_transaction_end(self, transaction: Transaction):
@@ -348,9 +346,27 @@ class TransactionManager:
         self.DeadlockManager.delete_edges_of_source(transaction_id=transaction.id)
 
     def handle_transaction_none(self, transaction: Transaction):
-        if not self.get_check_wait_queue_helper(transaction.transaction_type)(transaction):
-            self.wait_for_lock_queue.append(transaction)
-            print(f"Transaction {transaction.id}, variable x{transaction.variable} pushed to wait queue")
+
+        if transaction.transaction_type == TransactionType.READONLY:
+            if not self.check_readonly_transaction_from_wait_queue(transaction):
+                self.wait_for_lock_queue.append(transaction)
+                log(
+                    """Transaction T{0} wants to READONLY variable x{1} at time {2}: pushed to wait queue""".format(transaction.id, transaction.variable, self.timestamp)
+                )
+
+        elif transaction.transaction_type == TransactionType.READ:
+            if not self.check_read_transaction_from_wait_queue(transaction):
+                self.wait_for_lock_queue.append(transaction)
+                log(
+                    """Transaction T{0} wants to READ variable x{1} at time {2}: pushed to wait queue""".format(transaction.id, transaction.variable, self.timestamp)
+                )
+
+        elif transaction.transaction_type == TransactionType.WRITE:
+            if not self.check_write_transaction_from_wait_queue(transaction):
+                self.wait_for_lock_queue.append(transaction)
+                log(
+                    """Transaction T{0} wants to WRITE value {1} for variable x{2} at time {3}: pushed to wait queue""".format(transaction.id, transaction.value, transaction.variable, self.timestamp)
+                )
 
     def is_commit_allowed(self, transaction_id: int):
         return transaction_id not in self.aborted_transactions
@@ -362,7 +378,7 @@ class TransactionManager:
             transaction_id (int): transaction id
         """
         for index, transaction in enumerate(self.wait_for_lock_queue):
-            if transaction.id_ == pop_transaction_id:
+            if transaction.id == pop_transaction_id:
                 self.wait_for_lock_queue.pop(index)
 
     def prepare_input(self, filename: str):
