@@ -31,7 +31,7 @@ class TransactionManager:
         Args:
             transaction_id (int): id of transaction
         """
-        pass
+        log(f"Abort transaction T{transaction_id}")
 
     def add_transaction_to_site(self, site: Site, transaction: Transaction):
         existing_transactions = self.site_to_transactions.get(site.id, set())
@@ -246,7 +246,7 @@ class TransactionManager:
                 self.sites[site_id].release_all_locks(latest_transaction_id)
             log(f"Latest transaction {latest_transaction_id} is aborted.")
             self.abort_transaction(latest_transaction_id)
-            self.pop_waitq_transaction()
+            self.pop_waitq_transaction(latest_transaction_id)
             return True
         return False
 
