@@ -419,7 +419,6 @@ class TransactionManager:
             while True:
                 if not self.check_wait_queue():
                     break
-
             transaction_handler = {
                 InstructionType.FAIL: self.handle_transaction_fail,
                 InstructionType.RECOVER: self.handle_transaction_recover,
