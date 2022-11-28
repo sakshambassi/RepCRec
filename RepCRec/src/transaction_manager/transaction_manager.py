@@ -21,10 +21,10 @@ class TransactionManager:
         self.transaction_start_timestamp = {}  # { transaction #, time }
         self.timestamp = 0
         self.total_sites = total_sites
-        self.wait_for_lock_queue = []  # something list of transactions
-        self.write_transactions_to_variables = {}  # {transaction_id: set (variables)}
+        self.wait_for_lock_queue = []   # something list of transactions
+                                        # {transaction_id: set (variables)}
+        self.write_transactions_to_variables = {}
 
-    # TODO: implement the below function
     def abort_transaction(self, transaction_id: int):
         """ aborts the provided transaction
 
@@ -32,6 +32,7 @@ class TransactionManager:
             transaction_id (int): id of transaction
         """
         log(f"Abort transaction T{transaction_id}")
+        self.aborted_transactions.remove(transaction_id)
 
     def add_transaction_to_site(self, site: Site, transaction: Transaction):
         existing_transactions = self.site_to_transactions.get(site.id, set())
@@ -81,7 +82,7 @@ class TransactionManager:
             for site in self.sites:
                 if site.is_active() and site.is_variable_present(variable):
                     site.commit_cache(variable)
-        log(f"Transaction {transaction_id} commits")
+        log(f"Transaction {transaction_id} is commited")
 
         # clear transaction metadata in memory
         if transaction_id in self.write_transactions_to_variables:
@@ -137,7 +138,8 @@ class TransactionManager:
                 return True
             # site failed before the start of transaction
             last_fail_time = self.last_failed_timestamp[site]
-            last_commit_time = site.get_last_committed_time(variable, start_time)
+            last_commit_time = site.get_last_committed_time(
+                variable, start_time)
             if last_commit_time < last_fail_time and last_fail_time < start_time:
                 continue
             return True
@@ -240,7 +242,8 @@ class TransactionManager:
                 transactions=deadlocks
             )
             self.DeadlockManager.delete_edges_of_source(latest_transaction_id)
-            log(f"There exists deadlock with number of transactions={len(deadlocks)}")
+            log(
+                f"There exists deadlock with number of transactions={len(deadlocks)}")
             self.aborted_transactions.add(latest_transaction_id)
             for site_id in range(self.total_sites):
                 self.sites[site_id].release_all_locks(latest_transaction_id)
@@ -289,7 +292,8 @@ class TransactionManager:
             for site_transaction in site_transactions:
                 self.aborted_transactions.add(site_transaction)
             del self.site_to_transactions[transaction.site_id]
-        self.last_failed_timestamp[self.sites[transaction.site_id - 1]] = self.timestamp
+        self.last_failed_timestamp[self.sites[transaction.site_id - 1]
+                                   ] = self.timestamp
         log(f"Site {transaction.site_id} failed at time {self.timestamp}")
 
     def handle_transaction_recover(self, transaction: Transaction):
@@ -343,7 +347,8 @@ class TransactionManager:
         self.pop_waitq_transaction(transaction.id)
         for site_id in range(self.total_sites):
             self.sites[site_id].release_all_transaction_locks(transaction.id)
-        self.DeadlockManager.delete_edges_of_source(transaction_id=transaction.id)
+        self.DeadlockManager.delete_edges_of_source(
+            transaction_id=transaction.id)
 
     def handle_transaction_none(self, transaction: Transaction):
 
@@ -351,21 +356,24 @@ class TransactionManager:
             if not self.check_readonly_transaction_from_wait_queue(transaction):
                 self.wait_for_lock_queue.append(transaction)
                 log(
-                    """Transaction T{0} wants to READONLY variable x{1} at time {2}: pushed to wait queue""".format(transaction.id, transaction.variable, self.timestamp)
+                    """Transaction T{0} wants to READONLY variable x{1} at time {2}: pushed to wait queue""".format(
+                        transaction.id, transaction.variable, self.timestamp)
                 )
 
         elif transaction.transaction_type == TransactionType.READ:
             if not self.check_read_transaction_from_wait_queue(transaction):
                 self.wait_for_lock_queue.append(transaction)
                 log(
-                    """Transaction T{0} wants to READ variable x{1} at time {2}: pushed to wait queue""".format(transaction.id, transaction.variable, self.timestamp)
+                    """Transaction T{0} wants to READ variable x{1} at time {2}: pushed to wait queue""".format(
+                        transaction.id, transaction.variable, self.timestamp)
                 )
 
         elif transaction.transaction_type == TransactionType.WRITE:
             if not self.check_write_transaction_from_wait_queue(transaction):
                 self.wait_for_lock_queue.append(transaction)
                 log(
-                    """Transaction T{0} wants to WRITE value {1} for variable x{2} at time {3}: pushed to wait queue""".format(transaction.id, transaction.value, transaction.variable, self.timestamp)
+                    """Transaction T{0} wants to WRITE value {1} for variable x{2} at time {3}: pushed to wait queue""".format(
+                        transaction.id, transaction.value, transaction.variable, self.timestamp)
                 )
 
     def is_commit_allowed(self, transaction_id: int):

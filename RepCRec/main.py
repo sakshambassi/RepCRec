@@ -14,7 +14,7 @@ def main():
     )
 
     # TODO: complete prepare_input and follow the order of events
-    transaction_manager.prepare_input(filename="../tests/inputs/input3")
+    transaction_manager.prepare_input(filename="tests/inputs/input8")
 
 
 if __name__ == "__main__":

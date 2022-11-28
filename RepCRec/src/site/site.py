@@ -106,7 +106,8 @@ class Site:
             data_for_variable[time] = value
             self.stale[variable] = False
         self.data[variable] = data_for_variable
-        self.log_commit(variable, self.cache[variable])
+        if variable in self.cache:
+            self.log_commit(variable, self.cache[variable])
         self.cache[variable] = {}
 
     def log_commit(self, variable: int, committed_data: Dict[int, int]):
