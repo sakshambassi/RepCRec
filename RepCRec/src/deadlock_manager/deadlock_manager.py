@@ -1,5 +1,5 @@
 from src.utils import config
-
+from typing import List
 
 class DeadlockManager:
     def __init__(self) -> None:
@@ -7,7 +7,7 @@ class DeadlockManager:
         self.adjacency_list = [list() for _ in range(self.nodes)]
         self.deadlocked_transactions = set()
 
-    def detect_cycle_in_graph(self, visited: list, recursion_stack: list, node: int):
+    def detect_cycle_in_graph(self, visited: List[bool], stack: List[int], node: int):
         """ detects cycle in graph
         
         Args:
@@ -18,22 +18,27 @@ class DeadlockManager:
         Returns:
             cycle or not (bool)
         """
-        recursion_stack[node] = True  # setting visited true for current node
+        stack.append(node)
 
         for child in self.adjacency_list[node]:
             if visited[child]:
                 continue
             
-            # backedge from node -> child
-            if recursion_stack[child]:
-                self.deadlocked_transactions.add(child)
+            # Back-edge from node -> child
+            # Remove the cycle from stack and put in the deadlocked transactions set
+            if child in stack:
+                while len(stack) > 0:
+                    transaction_id = stack.pop()
+                    self.deadlocked_transactions.add(transaction_id)
+                    if child == transaction_id:
+                        break
                 return True
 
-            if self.detect_cycle_in_graph(visited, recursion_stack, child):
+            if self.detect_cycle_in_graph(visited, stack, child):
                 return True
 
         visited[node] = True
-        recursion_stack[node] = False
+        stack.pop()
         return False
 
 
@@ -56,10 +61,11 @@ class DeadlockManager:
             self.deadlocked_transactions (set)
         """
         self.deadlocked_transactions = set()
-        recursion_stack = [False] * self.nodes
+        stack = list()
+
         visited = [False] * self.nodes
         for i in range(self.nodes):
-            if self.detect_cycle_in_graph(visited, recursion_stack, i):
+            if self.detect_cycle_in_graph(visited, stack, i):
                 return self.deadlocked_transactions
         return self.deadlocked_transactions
 

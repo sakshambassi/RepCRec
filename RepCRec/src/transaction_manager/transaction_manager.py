@@ -32,7 +32,6 @@ class TransactionManager:
         Args:
             transaction_id (int): id of transaction
         """
-        log(f"Abort transaction T{transaction_id}")
         self.aborted_transactions.remove(transaction_id)
 
     def add_transaction_to_site(self, site: Site, transaction: Transaction):
@@ -260,12 +259,12 @@ class TransactionManager:
             )
             self.DeadlockManager.delete_edges_of_source(latest_transaction_id)
             log(
-                f"There exists deadlock with number of transactions={len(deadlocks)}")
+                f"Deadlock found: {len(deadlocks)} transactions in cycle")
             self.aborted_transactions.add(latest_transaction_id)
             for site_id in range(self.total_sites):
                 self.sites[site_id].release_all_transaction_locks(
                     latest_transaction_id)
-            log(f"Latest transaction {latest_transaction_id} is aborted.")
+            log(f"Latest transaction T{latest_transaction_id} aborted to avoid deadlock.")
             self.abort_transaction(latest_transaction_id)
             self.pop_waitq_transaction(latest_transaction_id)
             return True
