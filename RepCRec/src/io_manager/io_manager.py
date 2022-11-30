@@ -48,7 +48,8 @@ class IOManager:
         ro_transactions = []
         with open(filename, "r") as f:
             for line in f:
-                if line[:2] != "//" and line.strip():  # check if line is not a comment
+                line = line.strip()
+                if line and line[:2] != "//":  # check if line is not a comment
                     instruction = None
                     transaction_type = TransactionType.NONE
                     transaction_id, site_id, variable, value = 0, 0, 0, 0

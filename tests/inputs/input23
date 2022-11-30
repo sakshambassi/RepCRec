@@ -1,19 +1,12 @@
-// Test 17
-// T3 must wait till the commit of T2 before it reads x4
-// (because of locking), so sees 44.
-// T3 must abort though because the lock information is lost on site 4 
-// upon failure
-// T1 reads the initial value of x2 because T3 has aborted.
+// Test 21
+// From a student in 2017
+// T2 will try to promote its read lock to a write lock but can't
+// So there is a deadlock. T2 is younger so will abort.
 
-begin(T3)
 begin(T1)
 begin(T2)
-W(T3,x2,22)
-W(T2,x3,44)
-R(T3,x3)
-end(T2)
-fail(4)
-end(T3)
-R(T1,x2)
+R(T2, x2)
+W(T1, x2, 202)
+W(T2, x2, 302)
 end(T1)
 dump()
