@@ -112,7 +112,7 @@ class Site:
 
     def log_commit(self, variable: int, committed_data: Dict[int, int]):
         for timestamp, value in committed_data.items():
-            log(f"Committed variable x{variable}; with value {value}; on site {self.id}; at time {timestamp}")
+            log(f"Committed variable {variable}; with value {value}; on site {self.id}; at time {timestamp}")
 
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """

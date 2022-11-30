@@ -367,7 +367,7 @@ class TransactionManager:
             if can_wait:
                 self.wait_for_lock_queue.append(transaction)
                 log(
-                    """Transaction T{0} wants to READONLY variable x{1} at time {2}: pushed to wait queue""".format(
+                    """Transaction T{0} wants to READONLY variable {1} at time {2}: pushed to wait queue""".format(
                         transaction.id, transaction.variable, self.timestamp)
                 )
 
@@ -389,7 +389,7 @@ class TransactionManager:
                 self.DeadlockManager.insert_transactions_to_source(transaction.id, dependents)
                 self.wait_for_lock_queue.append(transaction)
                 log(
-                    """Transaction T{0} wants to WRITE value {1} for variable x{2} at time {3}: pushed to wait queue""".format(
+                    """Transaction T{0} wants to WRITE value {1} for variable {2} at time {3}: pushed to wait queue""".format(
                         transaction.id, transaction.value, transaction.variable, self.timestamp)
                 )
 
