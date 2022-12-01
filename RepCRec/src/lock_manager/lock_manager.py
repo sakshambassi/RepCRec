@@ -6,10 +6,8 @@ from src.lock_manager import Lock
 
 class LockManager:
     def __init__(self):
-        # { variable: int, lock: Lock }
-        self.table = dict()
+        self.table = dict()  # { variable: int, lock: Lock }
 
-    # TODO: Are there any checks before `acquire_lock` is called?
     def acquire_lock(
         self, transaction_id: int, variable: int, lock_type: LockType
     ) -> None:

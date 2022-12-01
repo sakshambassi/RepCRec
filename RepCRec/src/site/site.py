@@ -19,30 +19,34 @@ class Site:
 
     def acquire_lock(self, transaction_id: int, variable: int, locktype: LockType):
         """
-
-        Returns:
-
+        In the site, transaction `transaction_id` acquires a lock of type `locktype` on
+        the variable `variable`.
         """
         self.lock_manager.acquire_lock(transaction_id, variable, locktype)
 
-    # TODO: remove comment
-    # def recover
     def activate(self):
         """
-
-        Returns:
-
+        Activate the site.
         """
         self.active = True
 
     def can_acquire_read_lock(
         self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
+        """
+            Returns (AcquireLockPermission): Permission type that the transaction can
+            get when trying to acquire a READ lock on the given variable.
+
+        """
         return self.lock_manager.can_acquire_read_lock(variable, transaction_id)
 
     def can_acquire_write_lock(
         self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
+        """
+            Returns (AcquireLockPermission): Permission type that the transaction can
+            get when trying to acquire a WRITE lock on the given variable.
+        """
         return self.lock_manager.can_acquire_write_lock(variable, transaction_id)
 
     def check_variable_exists(self, variable: int) -> bool:
@@ -82,8 +86,8 @@ class Site:
 
     def get_value(self, variable: int, timestamp: int) -> int:
         """
-
-        Returns:
+        Returns: (int) Get last committed value for the give variable on/before the time
+        `timestamp`.
 
         """
         data_so_far = self.data[variable]
@@ -91,7 +95,6 @@ class Site:
         closest_timestamp = self._floor_of_timestamp(data_so_far, timestamp)
         return data_so_far[closest_timestamp]
 
-    # TODO: cache should be cleaned, cant find in ref
     def commit_cache(self, variable: int) -> None:
         """
         Variable in the site is committed (as part of a transaction), so the cache for
@@ -117,7 +120,7 @@ class Site:
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
         """
 
-        Returns:
+        Returns: Last committed time for variable before the time `timestamp`
 
         """
         data_so_far = self.data[variable]
@@ -125,8 +128,7 @@ class Site:
 
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
-
-        Returns:
+        Returns: All the transactions that have a lock on the given variable in the site.
 
         """
         return self.lock_manager.get_all_transaction_locks(variable)
@@ -146,12 +148,11 @@ class Site:
             log(f"x{variable}:{value}", end=" ")
         log("")
 
-    # TODO: remove comment
-    # def isUp def is_up
     def is_active(self) -> bool:
         """
+        The site is active or not (failed)
 
-        Returns:
+        Returns: bool
 
         """
         return self.active

@@ -6,10 +6,6 @@ from src.transaction_manager import Transaction
 from src.utils import log
 from typing import Set, Tuple
 
-# TODO: abort related code
-#     : verify deadlock related things
-
-
 class TransactionManager:
     def __init__(self, total_sites: int):
         self.aborted_transactions = set()
@@ -70,7 +66,6 @@ class TransactionManager:
                     dependents.add(dep_transaction.id)
         return dependents
 
-    # TODO: accessList logic as well
     def commit(self, transaction_id: int) -> None:
         """ When a transaction is committed, all the variables that it changed (made a write
         to), should be saved/committed on all the sites.
@@ -213,7 +208,6 @@ class TransactionManager:
             bool: Whether the given transaction can be applied onto all the site.
         """
 
-        # TODO: some canSkipWaitLockQueue logic
         dependents = self.any_dependent_in_wait_queue(transaction, LockType.WRITE)
 
         for site in self.sites:
