@@ -1,3 +1,8 @@
+"""
+Authors: 
+Saksham Bassi
+Aayush Agrawal
+"""
 from src.enums import TransactionType, InstructionType
 
 
@@ -11,16 +16,6 @@ class Transaction:
         variable: int,
         value: float,
     ):
-        """
-
-        Args:
-            id_ ():
-            transaction_type ():
-            instruction_type ():
-            site_id ():
-            variable ():
-            value ():
-        """
         self.id = id_
         self.transaction_type = transaction_type
         self.instruction_type = instruction_type

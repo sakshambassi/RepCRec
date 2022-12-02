@@ -1,3 +1,8 @@
+"""
+Authors: 
+Saksham Bassi
+Aayush Agrawal
+"""
 from src.deadlock_manager import DeadlockManager
 from src.enums import TransactionType, InstructionType, AcquireLockPermission, LockType
 from src.io_manager import IOManager

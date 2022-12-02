@@ -1,3 +1,8 @@
+"""
+Authors:
+Saksham Bassi
+Aayush Agrawal
+"""
 import configparser
 
 

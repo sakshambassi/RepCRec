@@ -1,3 +1,8 @@
+"""
+Authors: 
+Saksham Bassi
+Aayush Agrawal
+"""
 import re
 from typing import List
 
@@ -33,7 +38,7 @@ class IOManager:
             transaction_id (int)
         """
         begin, end = input_.find("("), input_.find(")")
-        return int(input_[begin + 2 : end])
+        return int(input_[begin + 2: end])
 
     def input_file(self, filename: str) -> List[Transaction]:
         """ Reads the input file, processes it and creates list of transactions
@@ -109,7 +114,7 @@ class IOManager:
             variable (int): variable data
         """
         begin, end = input_.find("("), input_.find(")")
-        raw_details = input_[begin + 2 : end].split(",")
+        raw_details = input_[begin + 2: end].split(",")
         transaction_id = int(raw_details[0])
         variable = int(re.findall(r"\d+", raw_details[1])[0])
         return transaction_id, variable
@@ -126,7 +131,7 @@ class IOManager:
             value (int):
         """
         begin, end = input_.find("("), input_.find(")")
-        raw_details = input_[begin + 2 : end].split(",")
+        raw_details = input_[begin + 2: end].split(",")
         transaction_id = int(raw_details[0])
         variable = int(re.findall(r"\d+", raw_details[1])[0])
         value = int(raw_details[2])

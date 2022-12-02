@@ -1,3 +1,8 @@
+"""
+Authors:
+Saksham Bassi
+Aayush Agrawal
+"""
 import math
 from typing import Dict, Set
 
@@ -31,7 +36,7 @@ class Site:
         self.active = True
 
     def can_acquire_read_lock(
-        self, variable: int, transaction_id: int
+            self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
         """
             Returns (AcquireLockPermission): Permission type that the transaction can
@@ -41,24 +46,13 @@ class Site:
         return self.lock_manager.can_acquire_read_lock(variable, transaction_id)
 
     def can_acquire_write_lock(
-        self, variable: int, transaction_id: int
+            self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
         """
             Returns (AcquireLockPermission): Permission type that the transaction can
             get when trying to acquire a WRITE lock on the given variable.
         """
         return self.lock_manager.can_acquire_write_lock(variable, transaction_id)
-
-    def check_variable_exists(self, variable: int) -> bool:
-        """
-
-        Args:
-            variable ():
-
-        Returns:
-
-        """
-        pass
 
     def initialize(self) -> None:
         """
@@ -71,24 +65,29 @@ class Site:
                 self.data[i] = {0: i * 10}
 
     def _floor_of_timestamp(
-        self, data_per_variable: Dict[int, int], timestamp: int
+            self, data_per_variable: Dict[int, int], timestamp: int
     ) -> int:
         closeness = math.inf
         closest_timestamp = -1
         for current_timestamp, _ in data_per_variable.items():
             if (
-                current_timestamp < timestamp
-                and timestamp - current_timestamp < closeness
+                    current_timestamp < timestamp
+                    and timestamp - current_timestamp < closeness
             ):
                 closeness = timestamp - current_timestamp
                 closest_timestamp = current_timestamp
         return closest_timestamp
 
     def get_value(self, variable: int, timestamp: int) -> int:
-        """
-        Returns: (int) Get last committed value for the give variable on/before the time
+        """ Get last committed value for the give variable on/before the time
         `timestamp`.
 
+        Args:
+            variable (int): variable value
+            timestamp (int): timestamp tick value
+
+        Returns:
+            int
         """
         data_so_far = self.data[variable]
         # find a key in `data_so_far` that is less than equal to timestamp
@@ -101,7 +100,7 @@ class Site:
         the variable is passed to the "data" attribute and cache is cleaned.
 
         Args:
-            variable (int)
+            variable (int): variable value
         """
         data_for_variable = self.data.get(variable, {})
         cache_for_variable = self.cache.get(variable, {})
@@ -114,14 +113,27 @@ class Site:
         self.cache[variable] = {}
 
     def log_commit(self, variable: int, committed_data: Dict[int, int]):
+        """ logs commit message on output screen
+
+        Args:
+            variable (int): variable value
+            committed_data (dict): commit details
+
+        Returns:
+            None
+        """
         for timestamp, value in committed_data.items():
             log(f"Committed variable {variable}; with value {value}; on site {self.id}; at time {timestamp}")
 
     def get_last_committed_time(self, variable: int, timestamp: int) -> int:
-        """
+        """ fetches kast commited timestamp
 
-        Returns: Last committed time for variable before the time `timestamp`
+        Args:
+            variable (int): variable value
+            timestamp (int): tick timestamp
 
+        Returns:
+            int: Last committed time for variable before the time `timestamp`
         """
         data_so_far = self.data[variable]
         return self._floor_of_timestamp(data_so_far, timestamp)
@@ -152,8 +164,8 @@ class Site:
         """
         The site is active or not (failed)
 
-        Returns: bool
-
+        Returns:
+            bool: site's active status
         """
         return self.active
 
@@ -173,20 +185,8 @@ class Site:
         """
         self.lock_manager.release_transaction_lock(transaction_id)
 
-    def release_lock(self, variable: int) -> bool:
-        """
-
-        Args:
-            variable ():
-
-        Returns:
-
-        """
-        pass
-
     def shutdown(self) -> None:
-        """
-        When a site is shutdown, its active attribute is set to False
+        """ When a site is shutdown, its active attribute is set to False
 
         As per the specification, even variables are present at all the sites.
         So the variable in site should be marked stale to differentiate from
@@ -199,8 +199,7 @@ class Site:
         self.cache = dict()
 
     def is_stale(self, variable: int) -> bool:
-        """
-        When a site has failed/shutdown, even variables in it are marked stale. This is
+        """ When a site has failed/shutdown, even variables in it are marked stale. This is
         because they can go out of sync with the copies of even variables on other
         (active) sites.
 
@@ -214,8 +213,7 @@ class Site:
         return self.stale.get(variable)
 
     def set_cache(self, variable: int, value: int, timestamp: int):
-        """
-        In the current site, for the given variable, store the value against the
+        """ In the current site, for the given variable, store the value against the
         timestamp. When the variable in the site is committed (as part of a transaction),
         the cache is passed to the "data" attribute and cache should be cleaned.
 
@@ -227,22 +225,24 @@ class Site:
         self.cache[variable] = cache_so_far
 
     def is_variable_unique(self, variable: int) -> bool:
-        """
-        Even variables are present on all sites and odd variables are present on only
+        """ Even variables are present on all sites and odd variables are present on only
         one site as per specification. So only odd variables can be unique.
 
         Args:
             variable (int)
 
-        Returns: bool
+        Returns:
+            bool: whether variable is unique(odd) or not
         """
         return variable in self.data and variable % 2 != 0
 
     def is_variable_present(self, variable: int) -> bool:
-        """
-        Args:
-            variable (int)
+        """ checks if variable is present or not
 
-        Returns: bool
+        Args:
+            variable (int): variable value
+
+        Returns:
+            bool: whether variable is present in current sites's data
         """
         return variable in self.data

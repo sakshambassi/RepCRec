@@ -1,3 +1,8 @@
+"""
+Authors: 
+Saksham Bassi
+Aayush Agrawal
+"""
 from typing import Set
 
 from src.enums import AcquireLockPermission, LockType
@@ -9,25 +14,23 @@ class LockManager:
         self.table = dict()  # { variable: int, lock: Lock }
 
     def acquire_lock(
-        self, transaction_id: int, variable: int, lock_type: LockType
+            self, transaction_id: int, variable: int, lock_type: LockType
     ) -> None:
-        """
-        A transaction acquires a lock of type "lock_type" on a variable.
-
+        """ A transaction acquires a lock of type "lock_type" on a variable.
         So when a transaction acquires a lock, its id is added against the variable in a
         table data structure.
 
         Args:
-            transaction (int):
-            variable (int):
-            lock_type (LockType):
+            transaction_id (int): id of transaction
+            variable (int): variable value
+            lock_type (LockType): type of lock
         """
         lock = self.table.get(variable, Lock(lock_type, set()))
         lock.transactions.add(transaction_id)
         self.table[variable] = lock
 
     def can_acquire_write_lock(
-        self, variable: int, transaction_id: int
+            self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
         """
         - Allow if `variable` is not locked by any transaction.
@@ -48,9 +51,9 @@ class LockManager:
 
         lock = self.table[variable]
         if (
-            lock.type == LockType.READ
-            and transaction_id in lock.transactions
-            and len(lock.transactions) == 1
+                lock.type == LockType.READ
+                and transaction_id in lock.transactions
+                and len(lock.transactions) == 1
         ):
             return AcquireLockPermission.ALLOWED_IF_EMPTY_WAIT_QUEUE
 
@@ -60,7 +63,7 @@ class LockManager:
         return AcquireLockPermission.NOT_ALLOWED
 
     def can_acquire_read_lock(
-        self, variable: int, transaction_id: int
+            self, variable: int, transaction_id: int
     ) -> AcquireLockPermission:
         """
         - Allow if `variable` is not locked by any transaction.
@@ -89,17 +92,6 @@ class LockManager:
 
         return AcquireLockPermission.NOT_ALLOWED
 
-    def get_lock_type(self, variable: int) -> LockType:
-        """
-
-        Args:
-            variable ():
-
-        Returns:
-
-        """
-        pass
-
     def get_all_transaction_locks(self, variable: int) -> Set[int]:
         """
         Args:
@@ -117,17 +109,6 @@ class LockManager:
         Lock table is cleared/reinitialized when locks are to be released.
         """
         self.table = dict()
-
-    def release_lock(self, variable: int) -> bool:
-        """
-
-        Args:
-            variable (int):
-
-        Returns:
-
-        """
-        pass
 
     def release_transaction_lock(self, transaction_id: int):
         """

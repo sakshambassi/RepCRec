@@ -1,5 +1,11 @@
+"""
+Authors:
+Saksham Bassi
+Aayush Agrawal
+"""
 from src.utils import config
 from typing import List
+
 
 class DeadlockManager:
     def __init__(self) -> None:
@@ -9,10 +15,10 @@ class DeadlockManager:
 
     def detect_cycle_in_graph(self, visited: List[bool], stack: List[int], node: int):
         """ detects cycle in graph
-        
+
         Args:
-            vistied (list): list of bool visited
-            recursion_stack (list): recursion stack 
+            visited (list): list of bool visited
+            stack (list): recursion stack
             node (int): current node being processed
 
         Returns:
@@ -23,7 +29,7 @@ class DeadlockManager:
         for child in self.adjacency_list[node]:
             if visited[child]:
                 continue
-            
+
             # Back-edge from node -> child
             # Remove the cycle from stack and put in the deadlocked transactions set
             if child in stack:
@@ -41,14 +47,13 @@ class DeadlockManager:
         stack.pop()
         return False
 
-
     def delete_edges_of_source(self, transaction_id: int):
         """ deletes all edges of the source transaction
 
         Args:
             transaction_id (int): source transaction id
         """
-        self.adjacency_list[transaction_id] = list()    # remove outgoing transactions from source
+        self.adjacency_list[transaction_id] = list()  # remove outgoing transactions from source
         for node in range(self.nodes):
             # remove all incoming edges to source transaction
             if transaction_id in self.adjacency_list[node]:
@@ -77,8 +82,7 @@ class DeadlockManager:
             transactions (set): set of transaction_ids to be added
         """
         if source_transaction_id in transactions:
-            transactions.remove(source_transaction_id)   # remove source transaction from set
+            transactions.remove(source_transaction_id)  # remove source transaction from set
 
         for transaction_id in transactions:
             self.adjacency_list[source_transaction_id].append(transaction_id)
-
