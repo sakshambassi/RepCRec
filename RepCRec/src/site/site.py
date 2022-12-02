@@ -67,6 +67,18 @@ class Site:
     def _floor_of_timestamp(
             self, data_per_variable: Dict[int, int], timestamp: int
     ) -> int:
+        """
+        Find the timestamp that is less than the given timestamp and is as close as
+        possible to it. 
+
+        Args:
+            data_per_variable (Dict[int, int]): All the values of variables at different
+            timestamps. 
+            timestamp (int): target
+
+        Returns:
+            int: floor of target timestamp
+        """
         closeness = math.inf
         closest_timestamp = -1
         for current_timestamp, _ in data_per_variable.items():
@@ -171,14 +183,13 @@ class Site:
 
     def release_all_locks(self):
         """
-
-        Returns:
-
+        Ask the lock manager of the site to release all locks.
         """
         self.lock_manager.release_all_locks()
 
     def release_all_transaction_locks(self, transaction_id: int):
-        """ release all given transaction's locks
+        """
+        Ask the lock manager of the site to release all given transaction's locks
 
         Args:
             transaction_id (int): id of transaction of which transaction locks need to be released
@@ -186,7 +197,8 @@ class Site:
         self.lock_manager.release_transaction_lock(transaction_id)
 
     def shutdown(self) -> None:
-        """ When a site is shutdown, its active attribute is set to False
+        """
+        When a site is shutdown, its active attribute is set to False
 
         As per the specification, even variables are present at all the sites.
         So the variable in site should be marked stale to differentiate from

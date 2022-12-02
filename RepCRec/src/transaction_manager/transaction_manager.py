@@ -28,7 +28,8 @@ class TransactionManager:
         self.write_transactions_to_variables = {}
 
     def abort_transaction(self, transaction_id: int):
-        """ aborts the provided transaction
+        """
+        Aborts the provided transaction
 
         Args:
             transaction_id (int): id of transaction
@@ -37,6 +38,13 @@ class TransactionManager:
         self.aborted_transactions.remove(transaction_id)
 
     def add_transaction_to_site(self, site: Site, transaction: Transaction):
+        """
+        Helper function to map a transaction's id to a site.
+
+        Args:
+            site (Site)
+            transaction (Transaction)
+        """
         existing_transactions = self.site_to_transactions.get(site.id, set())
         existing_transactions.add(transaction.id)
         self.site_to_transactions[site.id] = existing_transactions
@@ -44,16 +52,35 @@ class TransactionManager:
     def add_variable_to_write_transaction(
         self, transaction: Transaction, variable: int
     ):
+        """
+        Helper function to map a variable to a transaction that has issued a write
+        request. 
+
+        Args:
+            transaction (Transaction):
+            variable (int):
+        """
         existing_variables = self.write_transactions_to_variables.get(
             transaction.id, set()
         )
         existing_variables.add(variable)
         self.write_transactions_to_variables[transaction.id] = existing_variables
 
-    # canSkipLockWaitQueue
     def any_dependent_in_wait_queue(
         self, transaction: Transaction, locktype: LockType
     ) -> Set[int]:
+        """
+        Check if the given transaction is contending to get a lock on any other
+        transaction that is ahead of the given transcation in the wait queue.
+
+        Args:
+            transaction (Transaction)
+            locktype (LockType)
+
+        Returns:
+            Set[int]: Set of transactions with which the passed transction contends
+            with/ are dependents.
+        """
         dependents = set()
         for dep_transaction in self.wait_for_lock_queue:
             if dep_transaction == transaction:
@@ -95,10 +122,17 @@ class TransactionManager:
                     self.site_to_transactions[site.id].remove(transaction_id)
 
     def check_wait_queue(self):
-        """_summary_
+        """
+        Before a new transaction is picked up, we check if there is a transaction in the
+        wait queue that has the permission to acquire the desired locks on the variables
+        across sites.
+
+        Therefore, this function iterates over all the transactions in the wait queue.
+        Helper methods are then called to check the condition based on which type of
+        lock the transaction desires.
 
         Returns:
-            _type_: _description_
+            bool: Whether a transaction in the wait queue is ready to be executed.
         """
         for index, transaction in enumerate(self.wait_for_lock_queue):
             if transaction.transaction_type == TransactionType.READONLY:
@@ -248,10 +282,12 @@ class TransactionManager:
         return can_wait, dependents
 
     def detect_deadlock(self):
-        """ detects deadlocks in graph, uses DeadlockManager module
+        """
+        Detects deadlocks in graph, uses DeadlockManager module. In case of a dead lock,
+        it calls on the latest transaction in the cycle of transactions and aborts it. 
 
         Returns:
-            true / false: true if detects a deadlock else false
+            bool: Whether a deadlock is detected.
         """
         deadlocks = self.DeadlockManager.detect_deadlock_in_graph()
         if len(deadlocks):
@@ -272,14 +308,15 @@ class TransactionManager:
         return False
 
     def fetch_latest_transaction(self, transactions: set) -> int:
-        """ fetches latest/youngest transaction
+        """
+        Fetches latest/youngest transaction
 
         Args:
-            transactions (set): set of transaction ids to search from
+            transactions (set): Set of transactions that form a cycle/deadlock in the
+            dependency graph formed by the transactions.
 
         Returns:
             latest_transaction_id (int): youngest transaction id
-
         """
         latest_transaction_id = None
         max_time = float("-inf")
@@ -290,7 +327,11 @@ class TransactionManager:
         return latest_transaction_id
 
     def handle_transaction_fail(self, transaction: Transaction):
-        """ handles transaction when it is FAIL
+        """
+        Handles transaction when it fails.
+
+        - All locks on the site of the transaction are released.
+        - Transaction is ready to abort. 
 
         Args:
             transaction (Transaction)
@@ -307,7 +348,7 @@ class TransactionManager:
         log(f"Site {transaction.site_id} failed at time {self.timestamp}")
 
     def handle_transaction_recover(self, transaction: Transaction):
-        """ handles transaction when it is RECOVER
+        """ Handles transaction when it is RECOVER
 
         Args:
             transaction (Transaction)
@@ -316,7 +357,7 @@ class TransactionManager:
         log(f"Site {transaction.site_id} recovered at time {self.timestamp}")
 
     def handle_transaction_dump(self, transaction: Transaction):
-        """ handles transaction when it is DUMP
+        """ Handles transaction when it is DUMP
 
         Args:
             transaction (Transaction)
@@ -326,7 +367,7 @@ class TransactionManager:
             site.dump(self.timestamp)
 
     def handle_transaction_begin(self, transaction: Transaction):
-        """ handles transaction when it is BEGIN
+        """ Handles transaction when it is BEGIN
 
         Args:
             transaction (Transaction)
@@ -335,7 +376,7 @@ class TransactionManager:
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     def handle_transaction_begin_readonly(self, transaction: Transaction):
-        """ handles transaction when it is BEGINRO
+        """ Handles transaction when it is BEGINRO
 
         Args:
             transaction (Transaction)
@@ -344,7 +385,12 @@ class TransactionManager:
         self.transaction_start_timestamp[transaction.id] = self.timestamp
 
     def handle_transaction_end(self, transaction: Transaction):
-        """ handles transaction when it is END
+        """ Handles transaction when it is END
+
+        - Attempt to commit the transaction, if failed, abort it.
+        - If transaction is present in the wait queue, remove it.
+        - Release all the locks that the transaction held.
+        - Remove the edges that had source has given transactions.
 
         Args:
             transaction (Transaction)
@@ -361,7 +407,21 @@ class TransactionManager:
             transaction_id=transaction.id)
 
     def handle_transaction_none(self, transaction: Transaction):
+        """
+        Transaction either wants to READONLY, READ or WRITE.
 
+        Helpers are invoked depending on the transaction type of the given transction.
+        It is checked if the given transaction can wait, or needs to be executed right
+        away. If it can wait, it is added to the wait queue.
+
+        In case of a READ and WRITE transaction type, if a transaction can wait, edges
+        are added to a dependency graph such that the given transaction is the source
+        vertex and the transactions on which it depends assume the destination vertices.
+        
+        Args:
+            transaction (Transaction)
+        """
+        
         if transaction.transaction_type == TransactionType.READONLY:
             can_wait = self.check_readonly_transaction_from_wait_queue(
                 transaction)
@@ -395,10 +455,21 @@ class TransactionManager:
                 )
 
     def is_commit_allowed(self, transaction_id: int):
+        """
+
+        If a transaction is not marked for abortion, it can commit.
+
+        Args:
+            transaction_id (int)
+
+        Returns:
+            bool: Whether a transaction can commit or not.
+        """
         return transaction_id not in self.aborted_transactions
 
     def pop_waitq_transaction(self, pop_transaction_id: int):
-        """ pops transaction from the wait queue
+        """
+        Pops transaction from the wait queue
 
         Args:
             transaction_id (int): transaction id
@@ -424,10 +495,8 @@ class TransactionManager:
         self.start_execution()
 
     def start_execution(self):
-        """ starts the execution on all transactions
-
-        Returns:
-
+        """
+        Starts the execution on all transactions
         """
         for transaction in self.transactions:
             self.timestamp += 1
