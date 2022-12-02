@@ -50,7 +50,8 @@ def main():
     config = read_config(configdir)
 
     if args.run_all:
-        for filename in sorted(glob.glob('tests/inputs/*')):
+        filepath = args.input + '/*'
+        for filename in sorted(glob.glob(filepath)):
             run_input(config, filename)
     else:
         filename = args.input
