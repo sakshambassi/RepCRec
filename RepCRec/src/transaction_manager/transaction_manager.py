@@ -184,12 +184,15 @@ class TransactionManager:
                 site.is_variable_unique(variable)
                 or site not in self.last_failed_timestamp
             ):
+                self.log_read(transaction, site)
                 return False
             # site failed before the start of transaction
             last_fail_time = self.last_failed_timestamp[site]
             last_commit_time = site.get_last_committed_time(variable, start_time)
             if last_commit_time < last_fail_time and last_fail_time < start_time:
                 continue
+
+            self.log_read(transaction, site)
             return False
         return True
 
@@ -229,6 +232,7 @@ class TransactionManager:
             log(f"Transaction T{transaction.id} acquires READ lock on variable {variable} at site {site.id} at time {self.timestamp}")
             site.acquire_lock(transaction.id, variable, LockType.READ)
             self.add_transaction_to_site(site, transaction)
+            self.log_read(transaction, site)
             return False, dependents
 
         return True, dependents
@@ -466,6 +470,13 @@ class TransactionManager:
             bool: Whether a transaction can commit or not.
         """
         return transaction_id not in self.aborted_transactions
+
+    def log_read(self, transaction: Transaction, site: Site):
+        variable = transaction.variable
+        begin_time = self.transaction_start_timestamp[transaction.id]
+        value = site.get_value(variable, begin_time)
+        log(
+            f"Variable {variable}: {value}")
 
     def pop_waitq_transaction(self, pop_transaction_id: int):
         """
