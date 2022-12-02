@@ -28,6 +28,7 @@ class TransactionManager:
         Args:
             transaction_id (int): id of transaction
         """
+        log(f"Abort transaction T{transaction_id}")
         self.aborted_transactions.remove(transaction_id)
 
     def add_transaction_to_site(self, site: Site, transaction: Transaction):
@@ -186,6 +187,7 @@ class TransactionManager:
                 continue
 
             dependents = set()
+            log(f"Transaction T{transaction.id} acquires READ lock on variable {variable} at site {site.id} at time {self.timestamp}")
             site.acquire_lock(transaction.id, variable, LockType.READ)
             self.add_transaction_to_site(site, transaction)
             return False, dependents
