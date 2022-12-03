@@ -136,16 +136,20 @@ class TransactionManager:
         """
         for index, transaction in enumerate(self.wait_for_lock_queue):
             if transaction.transaction_type == TransactionType.READONLY:
-                can_wait = self.check_readonly_transaction_from_wait_queue(transaction)
+                can_wait, site = self.check_readonly_transaction_from_wait_queue(transaction)
                 if not can_wait:
                     self.wait_for_lock_queue.pop(index)
+                    self.log_read(
+                        transaction, site, self.transaction_start_timestamp[transaction.id])
                     return True
             
             if transaction.transaction_type == TransactionType.READ:
-                can_wait, _ = self.check_read_transaction_from_wait_queue(
+                can_wait, _, site = self.check_read_transaction_from_wait_queue(
                     transaction)
                 if not can_wait:
                     self.wait_for_lock_queue.pop(index)
+                    self.log_read(
+                        transaction, site, self.timestamp)
                     return True
 
             if transaction.transaction_type == TransactionType.WRITE:
@@ -184,17 +188,14 @@ class TransactionManager:
                 site.is_variable_unique(variable)
                 or site not in self.last_failed_timestamp
             ):
-                self.log_read(transaction, site)
-                return False
+                return False, site
             # site failed before the start of transaction
             last_fail_time = self.last_failed_timestamp[site]
             last_commit_time = site.get_last_committed_time(variable, start_time)
             if last_commit_time < last_fail_time and last_fail_time < start_time:
                 continue
-
-            self.log_read(transaction, site)
-            return False
-        return True
+            return False, site
+        return True, None
 
     def check_read_transaction_from_wait_queue(self, transaction) -> Tuple[bool, Set[int]]:
         """
@@ -232,10 +233,9 @@ class TransactionManager:
             log(f"Transaction T{transaction.id} acquires READ lock on variable {variable} at site {site.id} at time {self.timestamp}")
             site.acquire_lock(transaction.id, variable, LockType.READ)
             self.add_transaction_to_site(site, transaction)
-            self.log_read(transaction, site)
-            return False, dependents
+            return False, dependents, site
 
-        return True, dependents
+        return True, dependents, None
 
     def check_write_transaction_from_wait_queue(self, transaction) -> Tuple[bool, Set[int]]:
         """
@@ -427,7 +427,7 @@ class TransactionManager:
         """
         
         if transaction.transaction_type == TransactionType.READONLY:
-            can_wait = self.check_readonly_transaction_from_wait_queue(
+            can_wait, site = self.check_readonly_transaction_from_wait_queue(
                 transaction)
             if can_wait:
                 self.wait_for_lock_queue.append(transaction)
@@ -435,9 +435,12 @@ class TransactionManager:
                     """Transaction T{0} wants to READONLY variable {1} at time {2}: pushed to wait queue""".format(
                         transaction.id, transaction.variable, self.timestamp)
                 )
+            else:
+                self.log_read(transaction, site,
+                              self.transaction_start_timestamp[transaction.id])
 
         elif transaction.transaction_type == TransactionType.READ:
-            can_wait, dependents = self.check_read_transaction_from_wait_queue(
+            can_wait, dependents, site = self.check_read_transaction_from_wait_queue(
                 transaction)
             if can_wait:
                 self.DeadlockManager.insert_transactions_to_source(
@@ -447,6 +450,8 @@ class TransactionManager:
                     """Transaction T{0} wants to READ variable x{1} at time {2}: pushed to wait queue""".format(
                         transaction.id, transaction.variable, self.timestamp)
                 )
+            else:
+                self.log_read(transaction, site, self.timestamp)
 
         elif transaction.transaction_type == TransactionType.WRITE:
             can_wait, dependents = self.check_write_transaction_from_wait_queue(transaction)
@@ -471,10 +476,10 @@ class TransactionManager:
         """
         return transaction_id not in self.aborted_transactions
 
-    def log_read(self, transaction: Transaction, site: Site):
+    def log_read(self, transaction: Transaction, site: Site, timestamp: int):
         variable = transaction.variable
         begin_time = self.transaction_start_timestamp[transaction.id]
-        value = site.get_value(variable, begin_time)
+        value = site.get_value(variable, timestamp)
         log(
             f"Variable {variable}: {value}")
 
